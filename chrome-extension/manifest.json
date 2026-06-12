@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "LeadArrow Telemetry Bridge",
+  "version": "1.0.0",
+  "description": "Real-time call monitoring and CRM telemetry for LeadArrow Enterprise",
+  "permissions": [
+    "storage",
+    "notifications",
+    "alarms"
+  ],
+  "host_permissions": [
+    "http://localhost:5001/*",
+    "https://*.leadarrow.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "LeadArrow Bridge",
+    "default_icon": {
+      "16": "icon-16.png",
+      "48": "icon-48.png",
+      "128": "icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icon-16.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      },
+      "description": "Open LeadArrow Bridge popup"
+    }
+  }
+}

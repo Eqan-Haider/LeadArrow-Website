@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeadArrow Bridge</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 380px;
+      min-height: 480px;
+      background: #0B0F19;
+      color: #F3F4F6;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+    }
+    .container { padding: 20px; }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      box-shadow: 0 0 20px rgba(99,102,241,0.3);
+    }
+    .header-text h1 {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      color: #fff;
+    }
+    .header-text p {
+      font-size: 9px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 9px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .badge-basic { background: rgba(245,158,11,0.12); color: #f59e0b; border: 1px solid rgba(245,158,11,0.2); }
+    .badge-premium { background: rgba(16,185,129,0.12); color: #10b981; border: 1px solid rgba(16,185,129,0.2); }
+    .badge-offline { background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+    .card {
+      background: rgba(11,15,25,0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .card-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #64748b;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .input-group input {
+      flex: 1;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 12px;
+      font-family: monospace;
+      letter-spacing: 0.1em;
+      outline: none;
+    }
+    .input-group input:focus {
+      border-color: rgba(99,102,241,0.5);
+    }
+    .input-group input::placeholder {
+      color: #475569;
+      letter-spacing: 0.05em;
+    }
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: #6344E3;
+      color: white;
+      box-shadow: 0 2px 12px rgba(99,68,227,0.3);
+    }
+    .btn-primary:hover { background: #5035C4; }
+    .btn-danger {
+      background: rgba(239,68,68,0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239,68,68,0.2);
+    }
+    .btn-danger:hover { background: rgba(239,68,68,0.25); }
+    .btn-success {
+      background: rgba(16,185,129,0.15);
+      color: #10b981;
+      border: 1px solid rgba(16,185,129,0.2);
+    }
+    .btn-success:hover { background: rgba(16,185,129,0.25); }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .dot-green { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.5); }
+    .dot-red { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+    .dot-amber { background: #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,0.5); animation: pulse 1.5s ease-in-out infinite; }
+    .call-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+    .call-item:last-child { border-bottom: none; }
+    .call-info { flex: 1; }
+    .call-name { font-size: 12px; font-weight: 600; color: #e2e8f0; }
+    .call-meta { font-size: 9px; color: #64748b; margin-top: 2px; }
+    .call-timer {
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+      color: #06b6d4;
+    }
+    .terminate-btn {
+      background: none;
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #ef4444;
+      font-size: 16px;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 8px;
+      transition: all 0.15s;
+    }
+    .terminate-btn:hover { background: rgba(239,68,68,0.15); }
+    .empty-state {
+      text-align: center;
+      padding: 24px 0;
+      color: #475569;
+      font-size: 11px;
+    }
+    .error-text {
+      color: #ef4444;
+      font-size: 10px;
+      margin-top: 6px;
+    }
+    .tier-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+    }
+    .tier-row span { font-size: 11px; color: #94a3b8; }
+    .tier-row strong { color: #e2e8f0; }
+    .divider { height: 1px; background: rgba(255,255,255,0.04); margin: 12px 0; }
+    .hidden { display: none; }
+    @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+    @keyframes fadeIn { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">LA</div>
+      <div class="header-text">
+        <h1>LeadArrow Bridge</h1>
+        <p>Telemetry Extension</p>
+      </div>
+      <span id="tierBadge" class="badge badge-basic" style="margin-left:auto">BASIC</span>
+    </div>
+
+    <div id="stateUnlinked" class="card fade-in">
+      <div class="card-title">&#128274; Pair with LeadArrow Server</div>
+      <p style="font-size:11px;color:#64748b;margin-bottom:12px">Enter your synchronization code to link this extension to your LeadArrow workspace.</p>
+      <div class="input-group">
+        <input type="text" id="pairingInput" placeholder="LA-XXXX-XXXX-XXXX" maxlength="19" autocomplete="off">
+        <button id="pairBtn" class="btn btn-primary">Pair</button>
+      </div>
+      <div id="pairError" class="error-text hidden"></div>
+      <p style="font-size:9px;color:#475569;margin-top:8px;text-align:center">Token <strong style="color:#f59e0b">LA-2026-PREMIUM</strong> unlocks all premium telemetry</p>
+    </div>
+
+    <div id="stateLinked" class="hidden">
+      <div class="card fade-in">
+        <div class="flex" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <span class="card-title" style="margin-bottom:0">&#128225; Connection Status</span>
+          <span id="connStatus" class="badge badge-premium" style="font-size:8px">&#9679; Live</span>
+        </div>
+        <div class="tier-row"><span>Agent</span><strong id="agentName">-</strong></div>
+        <div class="tier-row"><span>Workspace</span><strong id="workspaceName">-</strong></div>
+        <div class="tier-row"><span>Email</span><strong id="agentEmail">-</strong></div>
+        <div class="divider"></div>
+        <button id="unpairBtn" class="btn btn-danger" style="width:100%">Disconnect &amp; Unpair</button>
+      </div>
+
+      <div id="callsSection" class="card fade-in">
+        <div class="card-title">&#128222; Active Calls</div>
+        <div id="activeCallsList"></div>
+        <div id="noCalls" class="empty-state">No active calls. Incoming calls will appear here in real time.</div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">&#128200; Session Metrics</div>
+        <div class="tier-row"><span>Active Calls</span><strong id="activeCallCount">0</strong></div>
+        <div class="tier-row"><span>Telemetry Stream</span><strong id="telemetryStatus" style="color:#10b981">&#9679; Flowing</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
