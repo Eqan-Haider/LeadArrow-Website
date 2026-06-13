@@ -2,12 +2,18 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const router = express.Router();
-const { getIO, getConnectedUsers } = require('../services/socketManager');
-const io = getIO();
-const connectedUsers = getConnectedUsers();
+let io = null;
+let connectedUsers = null;
+try {
+  const socketMgr = require('../services/socketManager');
+  io = socketMgr.getIO();
+  connectedUsers = socketMgr.getConnectedUsers();
+} catch (e) {
+  console.warn('[slackWebhook] Socket.io not available — SSE broadcast only');
+}
 const { routeLead, routeBookingToCloser, checkCalendarAvailability } = require('../services/routingEngine');
 const { checkUsageLimit } = require('../middleware/usageLimit');
-const { broadcastEvent } = require('../../server');
+const { broadcastToAll: broadcastEvent } = require('../../server');
 
 function extractPayload(req) {
   if (req.body && typeof req.body === 'object') {
@@ -114,6 +120,7 @@ function robustParse(raw) {
 }
 
 async function emitToWorkspaceUsers(workspaceId, eventType, eventData, excludeUserIds = []) {
+  if (!io || !connectedUsers) { return; }
   const excludeSet = new Set(excludeUserIds);
   for (const [userId, socketId] of (connectedUsers?.entries?.() || [])) {
     if (!excludeSet.has(userId)) {

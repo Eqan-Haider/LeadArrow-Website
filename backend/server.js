@@ -7,6 +7,12 @@ var nodemailer = require('nodemailer');
 var { PrismaClient } = require('@prisma/client');
 var prisma = new PrismaClient();
 
+/* ===== Socket.io init (lazy) ===== */
+try {
+  var socketManagerModule = require('./src/services/socketManager');
+  var initSocketFn = socketManagerModule.initSocket;
+} catch(e) { console.warn('[socketManager]', e.message); }
+
 var mailTransporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.ethereal.email',
   port: parseInt(process.env.SMTP_PORT) || 587,
@@ -482,6 +488,41 @@ app.get('/api/subscription/status', async function(req, res) {
   }
 });
 
+/* ===== ALERT THRESHOLD BREACH STATUS (for Chrome Extension) ===== */
+var alertBreachState = { breaches: [], lastChecked: null };
+
+app.get('/api/alerts/status', function(req, res) {
+  var email = req.query.email || 'unknown';
+  var activeThresholds = [];
+  for (var i = 0; i < connections.length; i++) {
+    try { connections[i].write('event: ALERTS_STATUS\ndata: ' + JSON.stringify(alertBreachState) + '\n\n'); } catch (e) {}
+  }
+  res.json(alertBreachState);
+});
+
+app.post('/api/alerts/breach', function(req, res) {
+  try {
+    var body = req.body || {};
+    var entry = {
+      metric: body.metric || 'unknown',
+      operator: body.operator || 'gt',
+      value: body.value || 0,
+      actual: body.actual || 0,
+      message: body.message || 'Threshold breached',
+      timestamp: new Date().toISOString(),
+      severity: body.severity || 'warning',
+    };
+    alertBreachState.breaches.unshift(entry);
+    if (alertBreachState.breaches.length > 50) alertBreachState.breaches.length = 50;
+    alertBreachState.lastChecked = new Date().toISOString();
+    broadcastToAll('ALERT_BREACH', entry);
+    console.log('[Alerts] Breach:', entry.message);
+    return res.json({ success: true, breach: entry });
+  } catch (e) {
+    return res.status(500).json({ success: false, message: e.message });
+  }
+});
+
 /* ===== DIRECT PAYMENT PROCESSOR ===== */
 app.post('/api/payment/process', async function(req, res) {
   try {
@@ -827,101 +868,53 @@ app.post('/api/extension/pair', function(req, res) {
   }
 });
 
-/* ===== STRUCTURED WEBHOOK RECEIVER (Slack) ===== */
-app.post('/api/webhook/slack/:workspaceId', function(req, res) {
-  try {
-    var wsId = req.params.workspaceId;
-    if (req.body && req.body.challenge) return res.json({ challenge: req.body.challenge });
-    var raw = '';
-    if (req.body && typeof req.body === 'object') {
-      raw = req.body.text || req.body.body || req.body.message || '';
-      if (req.body.payload && typeof req.body.payload === 'string') {
-        try { var p = JSON.parse(req.body.payload); raw = p.text || p.body || raw; } catch(e) {}
-      }
-      if (req.body.event && req.body.event.text) raw = req.body.event.text;
-    }
-    if (!raw) return res.status(200).json({ message: 'noop' });
-    var name = (raw.match(/Name:\s*(.+)/i) || raw.match(/(?:Prospect|Customer|Contact|Lead)[:\s]+(.+)/i) || [])[1];
-    if (name) name = name.trim().split('\n')[0].trim();
-    var email = (raw.match(/Email:\s*(.+)/i) || raw.match(/(\S+@\S+\.\S+)/) || [])[1];
-    if (email) email = email.trim();
-    var phone = (raw.match(/Phone:\s*(.+)/i) || raw.match(/(\+?\d[\d\s\-().]{6,}\d)/) || [])[1];
-    if (phone) phone = phone.trim();
-    var hostEmail = (raw.match(/Host\s*Email[:\s]+(\S+@\S+)/i) || raw.match(/(\S+@\S+\.\S+)/) || [])[1];
-    if (hostEmail) hostEmail = hostEmail.trim();
-    var salesRep = (raw.match(/Sales\s*Rep[:\s]+(.+)/i) || [])[1];
-    if (salesRep) salesRep = salesRep.trim();
-    if (!name) { var lines = raw.split('\n').filter(Boolean); if (lines.length) name = lines[0].replace(/^[-*•]\s*/, '').trim(); }
-    if (!name) name = 'Unknown Prospect';
-    var isBooking = /booking|booked|scheduled|meeting/i.test(raw);
-    var entry = {
-      leadId: 'lead-' + Date.now() + '-' + crypto.randomBytes(3).toString('hex'),
-      prospectName: name, email: email || null, phone: phone || null,
-      hostEmail: hostEmail || null, salesRep: salesRep || null,
-      leadSource: isBooking ? 'Slack Booking' : 'Slack',
-      source: 'Slack', type: isBooking ? 'booking' : 'lead',
-      workspaceId: wsId, status: 'ROUTING', timestamp: new Date().toISOString(),
-    };
-    leadStore.unshift(entry);
-    if (leadStore.length > 200) leadStore.length = 200;
-    premiumMetrics.totalActiveLeads = leadStore.length;
-    premiumMetrics.totalLeads = leadStore.length;
-    premiumMetrics.totalAccepted = leadStore.filter(function(l) { return l.status === 'CONNECTED' || l.status === 'CLAIMED'; }).length;
-    premiumMetrics.totalMissed = leadStore.filter(function(l) { return l.status === 'MISSED' || l.status === 'TIMEOUT'; }).length;
-    premiumMetrics.recentLeads.unshift({
-      prospectName: name, source: 'Slack', status: 'Connected',
-      time: 'Just now', dot: 'bg-emerald-500',
-    });
-    if (premiumMetrics.recentLeads.length > 20) premiumMetrics.recentLeads.length = 20;
-    broadcastToAll('NEW_LEAD_ALERT', entry);
-    if (isBooking) {
-      bookingAlerts.unshift(entry);
-      if (bookingAlerts.length > 50) bookingAlerts.length = 50;
-      broadcastToAll('NEW_BOOKING_ALERT', entry);
-    }
-    broadcastToAll('METRICS_UPDATE', premiumMetrics);
-    var fuSlack = { leadId: entry.leadId, leadName: name, repName: 'Slack Router', triggerAt: Date.now() + 60000, createdAt: new Date().toISOString() };
-    scheduledFollowUps.push(fuSlack);
-    console.log('[Slack] Lead:', name, '| ws:', wsId, '| type:', entry.type, '| Follow-up in 60s');
-    return res.status(200).json({ message: 'ok', leadId: entry.leadId, parsed: { name: name, email: email, phone: phone, hostEmail: hostEmail, salesRep: salesRep } });
-  } catch (e) {
-    console.error('[Slack] Error:', e.message);
-    broadcastToAll('NEW_LEAD_ALERT', {
-      leadId: 'lead-fallback-' + Date.now(), prospectName: 'Lead from Slack',
-      leadSource: 'Slack', status: 'ROUTING', timestamp: new Date().toISOString(),
-    });
-    return res.status(200).json({ message: 'fallback' });
-  }
-});
+/* ===== NOTE: Slack webhook lives in src/routes/slackWebhook.js (registered below) ===== */
 
-/* ===== PUSH LEAD ===== */
-app.post('/api/leads/push', function(req, res) {
+/* ===== PUSH LEAD with DB + Routing Engine ===== */
+app.post('/api/leads/push', async function(req, res) {
   try {
     var body = req.body || {};
+    var workspaceId = body.workspaceId || body.companyId;
+    if (!workspaceId) return res.status(400).json({ error: 'workspaceId required' });
+    var name = body.name || body.prospectName || 'Unknown Prospect';
+    var email = body.email || null;
+    var phone = body.phone || null;
+    var source = body.source || 'API Push';
+
+    var company = await prisma.company.findUnique({ where: { id: workspaceId } });
+    if (!company) {
+      company = await prisma.company.create({
+        data: { id: workspaceId, name: workspaceId === 'default' ? 'Default Company' : workspaceId },
+      });
+    }
+
+    var leadLog = await prisma.leadLog.create({
+      data: {
+        companyId: workspaceId,
+        prospectName: name,
+        leadSource: source,
+        source: 'API',
+        status: 'ROUTING',
+      },
+    });
+
     var entry = {
-      leadId: 'lead-' + Date.now() + '-' + crypto.randomBytes(3).toString('hex'),
-      prospectName: body.name || 'Test Prospect',
-      email: body.email || null, phone: body.phone || null,
-      leadSource: body.source || 'API Push',
-      source: body.source || 'API',
-      type: body.type || 'lead',
-      workspaceId: body.workspaceId || 'api_default',
+      leadId: leadLog.id,
+      prospectName: name, email: email, phone: phone,
+      leadSource: source, source: 'API',
       status: 'ROUTING', timestamp: new Date().toISOString(),
     };
-    leadStore.unshift(entry);
-    if (leadStore.length > 200) leadStore.length = 200;
-    premiumMetrics.totalActiveLeads = leadStore.length;
-    premiumMetrics.totalLeads = leadStore.length;
-    premiumMetrics.recentLeads.unshift({
-      prospectName: entry.prospectName, source: entry.leadSource, status: 'Connected',
-      time: 'Just now', dot: 'bg-emerald-500',
-    });
-    if (premiumMetrics.recentLeads.length > 20) premiumMetrics.recentLeads.length = 20;
     broadcastToAll('NEW_LEAD_ALERT', entry);
-    broadcastToAll('METRICS_UPDATE', premiumMetrics);
-    return res.status(200).json({ message: 'ok', leadId: entry.leadId });
+
+    var routeLead = require('./src/services/routingEngine').routeLead;
+    routeLead(leadLog.id, workspaceId).catch(function(e) {
+      console.error('[Push] Routing error:', e.message);
+    });
+
+    return res.status(200).json({ success: true, leadId: leadLog.id });
   } catch (e) {
-    return res.status(500).json({ message: 'error', error: e.message });
+    console.error('[Push] Error:', e.message);
+    return res.status(500).json({ error: e.message });
   }
 });
 
@@ -1004,6 +997,12 @@ app.get('/api/health', function(req, res) {
   });
 });
 
+/* ===== Init Socket.io ===== */
+try { if (typeof initSocketFn === 'function') initSocketFn(server); } catch(e) { console.warn('[socketManager] init:', e.message); }
+
+/* ===== Scheduled Jobs ===== */
+try { require('./src/jobs/weeklyReport'); console.log('[Jobs] Weekly report cron registered'); } catch(e) { console.warn('[Jobs] weeklyReport:', e.message); }
+
 /* ===== EXISTING ROUTES ===== */
 try { app.use('/api/auth', require('./src/routes/authRoutes')); } catch(e) { console.warn('[route] auth:', e.message); }
 try { app.use('/api/purchase', require('./src/routes/payment')); } catch(e) { console.warn('[route] payment:', e.message); }
@@ -1021,6 +1020,10 @@ try { app.use('/api/admin', require('./src/routes/admin')); } catch(e) { console
 try { app.use('/api/super-admin', require('./src/routes/superAdmin')); } catch(e) { console.warn('[route] super-admin:', e.message); }
 try { var slackR = require('./src/routes/slackWebhook'); app.use('/api/webhook', slackR); } catch(e) { console.warn('[route] slackWebhook:', e.message); }
 try { app.use('/api/alert-thresholds', require('./src/routes/alertThresholds')); } catch(e) { console.warn('[route] alertThresholds:', e.message); }
+try { app.use('/api/workspace', require('./src/routes/workspace')); } catch(e) { console.warn('[route] workspace:', e.message); }
+try { app.use('/api/workspace', require('./src/routes/googleCalendar')); } catch(e) { console.warn('[route] googleCalendar:', e.message); }
+try { app.use('/api/telnyx', require('./src/routes/telnyxWebhook')); } catch(e) { console.warn('[route] telnyxWebhook:', e.message); }
+try { app.use('/api/crm-oauth', require('./src/routes/crmOAuth')); } catch(e) { console.warn('[route] crmOAuth:', e.message); }
 
 module.exports = { app: app, server: server, broadcastToAll: broadcastToAll, connections: connections };
 

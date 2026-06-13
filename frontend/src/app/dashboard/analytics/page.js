@@ -11,7 +11,7 @@ import { AnimatedWords } from '../../components/AnimatedText';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL + '/api' : 'http://localhost:5001/api';
 
-const INITIAL_SPEED = { firstAlertDelay: '—', timeToFirstAnswer: '—', timeToAcceptance: '—', under1Min: 0, oneTo5Min: 0, over5Min: 0 };
+const INITIAL_SPEED = { firstAlertDelay: '—', timeToFirstAnswer: '—', timeToAcceptance: '—', avgResponseTime: '—', under1Min: 0, oneTo5Min: 0, over5Min: 0 };
 const INITIAL_VOLUME = { total: 0, accepted: 0, missed: 0, declined: 0, timedOut: 0, skipped: 0, connectionRate: 0 };
 const INITIAL_ROUTING = { deadEndRate: 0, routingLagEvents: 0, crmSyncErrors: 0 };
 
@@ -87,7 +87,10 @@ export default function AnalyticsPage() {
   const loadAnalytics = useCallback(async () => {
     if (!companyId) { setDataLoading(false); return; }
     try {
-      const overviewRes = await fetch(`${API_BASE}/analytics/overview?companyId=${companyId}`);
+      const [overviewRes, speedRes] = await Promise.all([
+        fetch(`${API_BASE}/analytics/overview?companyId=${companyId}`),
+        fetch(`${API_BASE}/analytics/speed?companyId=${companyId}`),
+      ]);
       if (overviewRes.ok) {
         const d = await overviewRes.json();
         setVolume({
@@ -99,11 +102,17 @@ export default function AnalyticsPage() {
           skipped: d.skipped ?? 0,
           connectionRate: d.totalLeads > 0 ? Math.round((d.accepted / d.totalLeads) * 100) : 0,
         });
+      }
+      if (speedRes.ok) {
+        const s = await speedRes.json();
         setSpeed({
-          firstAlertDelay: d.firstAlertDelay || '—',
-          timeToFirstAnswer: d.timeToFirstAnswer || '—',
-          timeToAcceptance: d.timeToAcceptance || '—',
-          ...(d.responseWindows || {}),
+          firstAlertDelay: s.firstAlertDelay || '—',
+          timeToFirstAnswer: s.timeToFirstAnswer || '—',
+          timeToAcceptance: s.timeToAcceptance || '—',
+          avgResponseTime: s.avgResponseTime || '—',
+          under1Min: s.under1Min ?? 0,
+          oneTo5Min: s.oneTo5Min ?? 0,
+          over5Min: s.over5Min ?? 0,
         });
       }
       const repsRes = await fetch(`${API_BASE}/analytics/reps?companyId=${companyId}`);

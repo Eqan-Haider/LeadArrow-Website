@@ -157,6 +157,7 @@ model WorkspaceSettings {
   bookingRoutingMode    String  @default("TRIAGE")
   calendarAwareProcessing Boolean @default(false)
   ringTimeout           Int     @default(20)
+  leadTriggerSource     String  @default("crm")
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

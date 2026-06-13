@@ -89,6 +89,8 @@ const signup = async (req, res) => {
         companyName: updatedUser.companyName,
         companyId: updatedUser.companyId,
         role: updatedUser.role,
+        subscriptionTier: updatedUser.subscriptionTier || 'BASIC',
+        isActivated: updatedUser.isActivated || false,
       },
     });
   } catch (error) {
@@ -124,6 +126,8 @@ const login = async (req, res) => {
         companyName: user.companyName,
         companyId: user.companyId,
         role: user.role,
+        subscriptionTier: user.subscriptionTier || 'BASIC',
+        isActivated: user.isActivated || false,
       },
     });
   } catch (error) {

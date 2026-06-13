@@ -1,7 +1,8 @@
-﻿'use client';
+'use client';
 import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import InternationalPhoneInput from '../components/InternationalPhoneInput';
+import WorkspaceView from './WorkspaceView';
 function SvgZap(c){return <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline></svg>}
 function SvgUsers(c){return <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>}
 function SvgBar(c){return <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>}
@@ -33,6 +34,7 @@ function fireConfetti(){
 
 var NAV_ITEMS = [
   {key:'Dashboard',label:'Dashboard',emoji:'\uD83D\uDCCA',gate:false},
+  {key:'Workspace',label:'Workspace',emoji:'\u2699\uFE0F',gate:true},
   {key:'Team & Agents',label:'Team & Agents',emoji:'\uD83D\uDC65',gate:true},
   {key:'Communications',label:'Communications',emoji:'\uD83D\uDCAC',gate:true},
   {key:'Analytics & Reports',label:'Analytics & Reports',emoji:'\uD83D\uDCC8',gate:true},
@@ -43,12 +45,78 @@ var NAV_ITEMS = [
   {key:'Access Keys',label:'Access Keys',emoji:'\uD83C\uDFAB',gate:false},
 ];
 
-var stylesSheet = '@keyframes orbFloat{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}@keyframes modalIn{0%{transform:scale(0.9);opacity:0}100%{transform:scale(1);opacity:1}}@keyframes fadeIn{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:0.4}50%{opacity:1}}@keyframes logoGlow{0%,100%{filter:drop-shadow(0 0 4px rgba(99,102,241,0.4))}50%{filter:drop-shadow(0 0 12px rgba(99,102,241,0.9))}}@keyframes slideLeft{0%{transform:translateX(100%)}100%{transform:translateX(0)}}@keyframes dissolve{0%{opacity:1;backdrop-filter:blur(16px)}100%{opacity:0;backdrop-filter:blur(0px)}}@keyframes radarPulse{0%{box-shadow:0 0 0 0 rgba(251,191,36,0.6)}100%{box-shadow:0 0 0 12px rgba(251,191,36,0)}}';
+var stylesSheet = `
+@keyframes modalIn{0%{transform:scale(0.9) rotateX(5deg);opacity:0}100%{transform:scale(1) rotateX(0);opacity:1}}
+@keyframes slideLeft{0%{transform:translateX(100%)}100%{transform:translateX(0)}}
+@keyframes dissolve{0%{opacity:1;backdrop-filter:blur(16px)}100%{opacity:0;backdrop-filter:blur(0px)}}
+@keyframes radarPulse{0%{box-shadow:0 0 0 0 rgba(6,182,212,0.5)}50%{box-shadow:0 0 0 8px rgba(6,182,212,0.15)}100%{box-shadow:0 0 0 12px rgba(6,182,212,0)}}
+@keyframes trunkGlow{0%,100%{border-color:rgba(6,182,212,0.15);box-shadow:0 0 20px rgba(6,182,212,0.05)}50%{border-color:rgba(6,182,212,0.35);box-shadow:0 0 40px rgba(6,182,212,0.15)}}
+@keyframes float3d{0%,100%{transform:translateY(0) rotateX(0) translateZ(0)}50%{transform:translateY(-8px) rotateX(2deg) translateZ(20px)}}
+@keyframes glowPulse{0%,100%{opacity:0.4;filter:brightness(1)}50%{opacity:1;filter:brightness(1.3)}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes toastIn{0%{transform:translateY(-20px) scale(0.95);opacity:0}100%{transform:translateY(0) scale(1);opacity:1}}
+@keyframes toastOut{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-20px) scale(0.95);opacity:0}}
+@keyframes card3d{0%{transform:perspective(1000px) rotateY(0)}100%{transform:perspective(1000px) rotateY(360deg)}}
+@keyframes lensFlare{0%{transform:translateX(-100%) translateY(-100%) rotate(25deg)}100%{transform:translateX(200%) translateY(200%) rotate(25deg)}}
+@keyframes energyPulse{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:0.6;transform:scale(1.05)}}
+@keyframes depthReveal{0%{transform:perspective(1200px) rotateX(10deg) translateY(30px);opacity:0}100%{transform:perspective(1200px) rotateX(0) translateY(0);opacity:1}}
+@keyframes borderGlow{0%,100%{border-color:rgba(99,68,227,0.15);box-shadow:0 0 15px rgba(99,68,227,0.05)}50%{border-color:rgba(99,68,227,0.4);box-shadow:0 0 30px rgba(99,68,227,0.15)}}
+@keyframes particleFloat{0%{transform:translateY(0) translateX(0) scale(1);opacity:0}20%{opacity:0.6}80%{opacity:0.3}100%{transform:translateY(-120px) translateX(40px) scale(0);opacity:0}}
+@keyframes scanLine{0%{transform:translateY(-100%)}100%{transform:translateY(100vh)}}
+@keyframes holographic{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes fadeInRow{0%{opacity:0;transform:translateX(-20px) scale(0.97);background-color:rgba(16,185,129,0.08)}50%{background-color:rgba(16,185,129,0.04)}100%{opacity:1;transform:translateX(0) scale(1);background-color:transparent}}
+@keyframes cardGlow{0%,100%{border-color:rgba(99,68,227,0.15);box-shadow:0 0 20px rgba(99,68,227,0.05),0 0 60px rgba(99,68,227,0.02)}50%{border-color:rgba(99,68,227,0.35);box-shadow:0 0 40px rgba(99,68,227,0.12),0 0 80px rgba(99,68,227,0.04)}}
+@keyframes parallaxTilt{0%{transform:perspective(1200px) rotateX(0) rotateY(0)}25%{transform:perspective(1200px) rotateX(2deg) rotateY(-2deg)}50%{transform:perspective(1200px) rotateX(0) rotateY(0)}75%{transform:perspective(1200px) rotateX(-2deg) rotateY(2deg)}100%{transform:perspective(1200px) rotateX(0) rotateY(0)}}
+@keyframes neonPulse{0%,100%{text-shadow:0 0 7px rgba(0,229,255,0.4),0 0 20px rgba(0,229,255,0.2)}50%{text-shadow:0 0 14px rgba(0,229,255,0.8),0 0 40px rgba(0,229,255,0.4)}}
+@keyframes typewriter{0%{width:0}100%{width:100%}}
+@keyframes glitch{0%{transform:translate(0)}20%{transform:translate(-2px,2px)}40%{transform:translate(2px,-1px)}60%{transform:translate(-1px,-2px)}80%{transform:translate(1px,2px)}100%{transform:translate(0)}}
+@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(99,68,227,0.5)}50%{box-shadow:0 0 0 12px rgba(99,68,227,0.15)}100%{box-shadow:0 0 0 20px rgba(99,68,227,0)}}
+@keyframes particleDrift{0%{transform:translateY(100%) translateX(0) scale(0);opacity:0}10%{opacity:0.5}90%{opacity:0.3}100%{transform:translateY(-100vh) translateX(80px) scale(1);opacity:0}}
+@keyframes hueRotate{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
+@keyframes scaleIn{0%{transform:scale(0.8) translateY(20px);opacity:0}60%{transform:scale(1.03) translateY(-2px)}100%{transform:scale(1) translateY(0);opacity:1}}
+.card-tilt{transition:transform 0.5s cubic-bezier(0.23,1,0.32,1),box-shadow 0.5s cubic-bezier(0.23,1,0.32,1),border-color 0.5s ease;transform-style:preserve-3d;will-change:transform}
+.card-tilt:hover{transform:perspective(1000px) rotateX(-3deg) rotateY(3deg) scale(1.03) translateZ(10px);box-shadow:0 25px 70px rgba(99,68,227,0.2),0 0 50px rgba(6,182,212,0.08),inset 0 1px 0 rgba(255,255,255,0.05);border-color:rgba(99,68,227,0.15)}
+.glow-border{position:relative;overflow:hidden}
+.glow-border::before{content:'';position:absolute;inset:-2px;border-radius:inherit;background:linear-gradient(135deg,rgba(99,68,227,0),rgba(6,182,212,0),rgba(16,185,129,0));z-index:-1;transition:all 0.5s ease}
+.glow-border:hover::before{background:linear-gradient(135deg,rgba(99,68,227,0.4),rgba(6,182,212,0.3),rgba(16,185,129,0.2))}
+.glow-border::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg,transparent 40%,rgba(255,255,255,0.03) 45%,rgba(255,255,255,0.05) 50%,rgba(255,255,255,0.03) 55%,transparent 60%);transform:translateX(-100%) translateY(-100%) rotate(25deg);transition:transform 0.8s ease}
+.glow-border:hover::after{transform:translateX(100%) translateY(100%) rotate(25deg)}
+.shimmer-text{background:linear-gradient(90deg,#e2e8f0,#a78bfa,#6366f1,#a78bfa,#e2e8f0);background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 4s ease-in-out infinite}
+.enterprise-card{animation:depthReveal 0.6s cubic-bezier(0.23,1,0.32,1) both;transform-style:preserve-3d}
+.enterprise-card:nth-child(1){animation-delay:0.05s}
+.enterprise-card:nth-child(2){animation-delay:0.1s}
+.enterprise-card:nth-child(3){animation-delay:0.15s}
+.enterprise-card:nth-child(4){animation-delay:0.2s}
+.enterprise-card:nth-child(5){animation-delay:0.25s}
+.enterprise-card:nth-child(6){animation-delay:0.3s}
+.card-shine{position:relative;overflow:hidden}
+.card-shine::before{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,0.03) 35%,rgba(255,255,255,0.05) 40%,rgba(255,255,255,0.03) 45%,transparent 50%);transform:translateX(-100%);transition:transform 0.8s ease;pointer-events:none;z-index:2}
+.card-shine:hover::before{transform:translateX(100%)}
+.enterprise-glow{animation:cardGlow 3s ease-in-out infinite;position:relative}
+.enterprise-glow::before{content:'';position:absolute;inset:-1px;border-radius:inherit;background:linear-gradient(135deg,rgba(99,68,227,0.3),rgba(6,182,212,0.2),rgba(16,185,129,0.15));z-index:-1;opacity:0;transition:opacity 0.5s;}
+.enterprise-glow:hover::before{opacity:1}
+.parallax-card{animation:parallaxTilt 8s ease-in-out infinite;transform-style:preserve-3d}
+.parallax-card:hover{animation-play-state:paused}
+.neon-text{animation:neonPulse 2s ease-in-out infinite}
+.premium-badge{animation:pulseRing 2s ease-in-out infinite;position:relative}
+.premium-badge::after{content:'';position:absolute;inset:-4px;border-radius:inherit;background:linear-gradient(135deg,rgba(99,68,227,0.2),rgba(6,182,212,0.15));z-index:-1;filter:blur(8px)}
+.scale-enter{animation:scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both}
+.glitch-hover:hover{animation:glitch 0.3s ease-in-out}
+.hue-rotate-premium{animation:hueRotate 8s linear infinite}
+.glass-card{background:rgba(11,15,25,0.4);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.04)}
+.glass-card:hover{background:rgba(11,15,25,0.6);border-color:rgba(255,255,255,0.08)}
+.depth-card{transform-style:preserve-3d;perspective:1200px}
+.depth-card>*{transform:translateZ(20px)}
+.holographic-bg{background:linear-gradient(135deg,rgba(99,68,227,0.03),rgba(6,182,212,0.03),rgba(16,185,129,0.03),rgba(99,68,227,0.03));background-size:400% 400%;animation:holographic 6s ease infinite}
+`;
 
 function BgOrbs(){
   return <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-    <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/4 blur-[140px]" style={{animation:'orbFloat 20s ease-in-out infinite'}} />
-    <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-violet-600/4 blur-[140px]" style={{animation:'orbFloat 25s ease-in-out infinite reverse'}} />
+    <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/4 blur-[140px]" />
+    <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-violet-600/4 blur-[140px]" />
+    <div className="absolute top-[40%] left-[30%] w-[40%] h-[40%] rounded-full bg-emerald-500/2 blur-[120px]" />
+    <div className="absolute top-[10%] right-[20%] w-[25%] h-[25%] rounded-full bg-cyan-500/2 blur-[100px]" />
+    <div className="holographic-bg absolute inset-0 opacity-30" />
   </div>
 }
 
@@ -56,7 +124,7 @@ function MetricCard(p){
   var l=p.label; var v=p.value; var ic=p.icon; var clr=p.color||'#6366f1'; var tr=p.trend;
   var dS=useState(typeof v==='number'?0:(v||'\u2014')); var d=dS[0]; var sD=dS[1]; var pV=useRef(v);
   useEffect(function(){if(typeof v!=='number'){sD(v);return}if(v===pV.current)return;pV.current=v;var st=performance.now();var sv=d;function raf(n){var p2=Math.min((n-st)/600,1);var e=1-Math.pow(1-p2,3);sD(Math.round(sv+(v-sv)*e));if(p2<1)requestAnimationFrame(raf)}requestAnimationFrame(raf)},[v]);
-  return <div className="bg-[#0B0F19]/80 backdrop-blur-xl border border-white/[0.04] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5 group hover:border-white/[0.07] transition-all duration-500" style={{animation:'fadeIn 0.7s ease-out'}}>
+    return <div className="enterprise-card card-shine enterprise-glow depth-card bg-[#0B0F19]/80 backdrop-blur-xl border border-white/[0.04] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5 group hover:border-white/[0.07] transition-all duration-500 card-tilt">
     <div className="flex items-start justify-between mb-3">
       <div><p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-slate-500 group-hover:text-slate-400 transition-colors">{l}</p><p className={cn('text-3xl font-bold mt-1 tracking-tight',v===0||v==='\u2014'?'text-slate-600':'text-white')}>{typeof v==='number'?d:v}</p></div>
       <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center" style={{color:clr}}>{ic}</div>
@@ -74,7 +142,7 @@ function PipelineBar(p){
 
 function TeamCard(p){
   var m=p.member;
-  return <div className="bg-[#0B0F19]/60 border border-white/[0.04] rounded-xl p-4" style={{animation:'fadeIn 0.7s ease-out'}}>
+  return <div className="enterprise-card card-shine card-tilt enterprise-glow depth-card bg-[#0B0F19]/60 border border-white/[0.04] rounded-xl p-4">
     <div className="flex items-center gap-3 mb-3">
       <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{background:'linear-gradient(135deg,'+m.avatar+',rgba(0,0,0,0.3))'}}>{m.initials}</div>
       <div><p className="text-sm font-semibold text-white">{m.name}</p>
@@ -101,10 +169,10 @@ function TimelineItem(p){
 }
 
 function FollowUpReminder(p){
-  return <div className="border-2 rounded-xl p-4 mb-3 bg-[#0B0F19]/80" style={{borderColor:'#FF5722',animation:'fadeIn 0.5s ease-out'}}>
+  return <div className="border-2 rounded-xl p-4 mb-3 bg-[#0B0F19]/80" style={{borderColor:'#FF5722'}}>
     <div className="flex items-center gap-3">
       <span className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)] animate-pulse shrink-0"/>
-      <div><p className="text-xs font-semibold text-amber-400 tracking-wide"><svg className="w-4 h-4 inline mr-1.5 -mt-0.5 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>FOLLOW-UP REMINDER — Call {p.leadName} Now!</p><p className="text-[10px] text-slate-500 mt-1">{p.leadName} &middot; {p.time}</p></div>
+      <div><p className="text-xs font-semibold text-amber-400 tracking-wide"><svg className="w-4 h-4 inline mr-1.5 -mt-0.5 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>FOLLOW-UP REMINDER � Call {p.leadName} Now!</p><p className="text-[10px] text-slate-500 mt-1">{p.leadName} &middot; {p.time}</p></div>
     </div>
   </div>
 }
@@ -125,6 +193,8 @@ function ManualLeadForm(p){
   var pS2=useState('');var ph=pS2[0];var sP=pS2[1];
   var vS=useState({});var fErrors=vS[0];var sFE=vS[1];
   var tS=useState({});var trunks=tS[0];var sT=tS[1];
+  var toS=useState(null);var toast=toS[0];var setToast=toS[1];
+  var ac=useState(0);var addCount=ac[0];var setAddCount=ac[1];
   function vEmail(em){return/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)}
   function h(ev){
     ev.preventDefault();var errs={};
@@ -134,9 +204,9 @@ function ManualLeadForm(p){
     sFE({});
     var entry={id:'manual-'+Date.now(),prospectName:n.trim(),email:e.trim()||null,phone:ph||null,leadSource:'Manual Entry',time:new Date().toLocaleTimeString(),status:'ROUTING'};
     setLeads(function(prev){return[entry].concat(prev).slice(0,100)});
-    setManualLeads(function(prev){return[{name:n.trim(),email:e.trim()||'\u2014',phone:ph||'\u2014',time:new Date().toLocaleTimeString(),status:'Manual'}].concat(prev).slice(0,5)});
+    setManualLeads(function(prev){var updated=[{name:n.trim(),email:e.trim()||'\u2014',phone:ph||'\u2014',time:new Date().toLocaleTimeString(),status:'Manual'}].concat(prev).slice(0,20);try{localStorage.setItem('manualLeads',JSON.stringify(updated))}catch(ex){}return updated});
     setMetrics(function(prev){return{...prev,totalActiveLeads:(prev.totalActiveLeads||0)+1}});
-    sN('');sE('');sP('')
+    setToast('Lead added! \u2705');setTimeout(function(){setToast(null)},3000);setAddCount(function(p){return p+1})
   }
   function toggleTrunk(idx){sT(function(prev){var n2={...prev};n2[idx]=!n2[idx];return n2})}
   function onEmailBlur(){if(e.trim()&&!vEmail(e.trim())){sFE(function(p){return{...p,email:'Invalid email format \u2014 must be something@domain.com'}})}}
@@ -146,15 +216,16 @@ function ManualLeadForm(p){
     sFE(function(p2){var n2={...p2};delete n2.phone;return n2});
     sP(clean);
   }
-  return <div className="mb-8 bg-[#0B0F19]/60 backdrop-blur-xl border border-white/[0.04] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5" style={{animation:'fadeIn 0.5s ease-out'}}>
-    <div className="flex items-center gap-2.5 mb-4"><div className="w-7 h-7 rounded-lg bg-violet-500/20 flex items-center justify-center">{SvgZap('w-3.5 h-3.5 text-violet-400')}</div><h2 className="text-sm font-bold text-white">Manual Lead Sandbox</h2><span className="text-[9px] text-slate-500 ml-auto">{manualLeads.length}/5 leads</span></div>
+  return <div className="mb-8 bg-[#0B0F19]/60 backdrop-blur-xl border border-white/[0.04] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5 card-tilt card-shine enterprise-glow depth-card parallax-card" style={{animation:'float3d 6s ease-in-out infinite'}}>
+    <div className="flex items-center gap-2.5 mb-4"><div className="w-7 h-7 rounded-lg bg-violet-500/20 flex items-center justify-center">{SvgZap('w-3.5 h-3.5 text-violet-400')}</div><h2 className="text-sm font-bold text-white shimmer-text">Manual Lead Sandbox</h2><span className="text-[9px] text-slate-500 ml-auto">{manualLeads.length} leads</span></div>
+    {toast&&<div className="fixed top-6 right-6 z-[999] bg-emerald-500/15 border border-emerald-500/30 rounded-xl px-5 py-3 text-emerald-300 text-sm font-semibold shadow-[0_8px_32px_rgba(16,185,129,0.2)] backdrop-blur-xl" style={{animation:'toastIn 0.3s cubic-bezier(0.34,1.56,0.64,1)'}}>{'\u2705'} {toast}</div>}
     <form onSubmit={h} className="flex items-end gap-3 mb-4">
       <div className="flex-1"><label className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold block mb-1">Name *</label><input type="text" value={n} onChange={function(ev){var v=ev.target.value.replace(/[^a-zA-Z\s]/g,'');sFE(function(p2){var n2={...p2};delete n2.name;return n2});sN(v)}} placeholder="Enter name (alphabetic only)" className={cn('w-full bg-white/[0.03] border rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none',fErrors.name?'border-red-500/50 focus:border-red-500':'border-white/[0.06] focus:border-violet-500/50')}/>{fErrors.name&&<p className="text-[9px] text-red-400 mt-1">{fErrors.name}</p>}</div>
       <div className="flex-1"><label className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold block mb-1">Email</label><input type="text" value={e} onChange={function(ev){sFE(function(p2){var n2={...p2};delete n2.email;return n2});sE(ev.target.value)}} onBlur={onEmailBlur} placeholder="email@domain.com" className={cn('w-full bg-white/[0.03] border rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none',fErrors.email?'border-red-500/50 focus:border-red-500':'border-white/[0.06] focus:border-violet-500/50')}/>{fErrors.email&&<p className="text-[9px] text-red-400 mt-1">{fErrors.email}</p>}</div>
             <InternationalPhoneInput value={ph} onChange={function(v){sFE(function(p2){var n2={...p2};delete n2.phone;return n2});sP(v)}} isPremium={isPremium} disabled={!isPremium} error={fErrors.phone} label='Phone'/>
       <button type="submit" disabled={!n.trim()} className="bg-[#6344E3] hover:bg-[#5035C4] text-white px-5 py-2 rounded-lg text-xs font-semibold shadow-[0_4px_15px_rgba(99,68,227,0.3)] disabled:opacity-50 transition-all whitespace-nowrap">{'\u2795'} Add Lead</button>
     </form>
-    {manualLeads.length>0?<div className="overflow-x-auto"><table className="w-full text-left"><thead><tr className="text-[9px] text-slate-500 uppercase tracking-wider border-b border-white/[0.04]"><th className="pb-2 pr-3 font-semibold">Name</th><th className="pb-2 pr-3 font-semibold">Email</th><th className="pb-2 pr-3 font-semibold">Phone</th><th className="pb-2 pr-3 font-semibold">Time</th><th className="pb-2 pr-3 font-semibold">Status</th><th className="pb-2 font-semibold">Call Trunk</th></tr></thead><tbody>{manualLeads.map(function(l,i){var trunkOn=trunks[i];return <tr key={i} className="border-b border-white/[0.02] text-sm text-slate-300" style={{animation:'fadeIn 0.3s ease-out'}}><td className="py-2.5 pr-3 font-medium text-white">{l.name}</td><td className="py-2.5 pr-3 text-slate-400">{l.email}</td><td className="py-2.5 pr-3 text-slate-400">{l.phone}</td><td className="py-2.5 pr-3 text-slate-500">{l.time}</td><td className="py-2.5 pr-3"><span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">{l.status}</span></td><td className="py-2.5"><button onClick={function(){toggleTrunk(i)}} className={cn('text-[10px] px-2.5 py-1 rounded-lg font-medium transition-all',trunkOn?'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30':'bg-white/[0.03] text-slate-500 hover:text-slate-300 border border-white/[0.06]')}>{'\uD83D\uDCDE'} {trunkOn?'Trunk Active':'Connect'}</button></td></tr>})}</tbody></table></div>:<div className="text-center py-6"><p className="text-xs text-slate-600">Waiting for live ingestion pipelines... Server connected.</p></div>}
+    {manualLeads.length>0?<div className="overflow-x-auto"><table className="w-full text-left"><thead><tr className="text-[9px] text-slate-500 uppercase tracking-wider border-b border-white/[0.04]"><th className="pb-2 pr-3 font-semibold">Name</th><th className="pb-2 pr-3 font-semibold">Email</th><th className="pb-2 pr-3 font-semibold">Phone</th><th className="pb-2 pr-3 font-semibold">Time</th><th className="pb-2 pr-3 font-semibold">Status</th><th className="pb-2 font-semibold">Call Trunk</th></tr></thead><tbody>{manualLeads.map(function(l,i){var trunkOn=trunks[i];var isNew=i===0&&addCount>0;return <tr key={i} className={'border-b border-white/[0.02] text-sm text-slate-300 transition-all duration-500 '+(isNew?'bg-emerald-500/5':'')} style={isNew?{animation:'fadeInRow 0.6s ease-out'}:{}}><td className="py-2.5 pr-3 font-medium text-white">{l.name}</td><td className="py-2.5 pr-3 text-slate-400">{l.email}</td><td className="py-2.5 pr-3 text-slate-400">{l.phone}</td><td className="py-2.5 pr-3 text-slate-500">{l.time}</td><td className="py-2.5 pr-3"><span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">{l.status}</span></td><td className="py-2.5"><button onClick={function(){toggleTrunk(i)}} className={cn('text-[10px] px-2.5 py-1 rounded-lg font-medium transition-all',trunkOn?'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/25':'bg-white/[0.03] text-slate-500 hover:text-slate-300 border border-white/[0.06]')}>{'\uD83D\uDCDE'} {trunkOn?'Trunk Active':'Connect'}</button></td></tr>})}</tbody></table></div>:<div className="text-center py-6"><p className="text-xs text-slate-600">Waiting for live ingestion pipelines... Server connected.</p></div>}
   </div>
 }
 
@@ -193,12 +264,12 @@ function Sidebar(p){
     <div>
       <div className="flex items-center gap-3 mb-8">
         <div className="relative">
-          <div className="w-11 h-11 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shadow-[0_0_20px_rgba(99,68,227,0.3)]">
+          <div className={'w-11 h-11 rounded-lg bg-white/[0.04] border flex items-center justify-center '+(iP?'shadow-[0_0_30px_rgba(16,185,129,0.4)] border-emerald-500/30':'shadow-[0_0_20px_rgba(99,68,227,0.3)] border-white/[0.08]')}>
             <img src="/leadarrow-logo.png" alt="LeadArrow" className="w-7 h-7 object-contain"/>
           </div>
           <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></span>
         </div>
-        <div><p className="text-sm font-extrabold text-white tracking-[0.12em]">LeadArrow</p><p className="text-[8px] text-slate-500 tracking-[0.2em] uppercase">Enterprise</p></div>
+        <div><p className="text-sm font-extrabold text-white tracking-[0.12em]">LeadArrow</p><p className={'text-[8px] tracking-[0.2em] uppercase '+(iP?'text-emerald-400 font-bold':'text-slate-500')}>{iP?'\u2605 Enterprise Elite \u2605':'Enterprise'}</p></div>
       </div>
       <div className="relative mb-6">
         <button ref={soR} onClick={toggleSO} className="w-full flex items-center gap-3 bg-white/[0.02] border border-white/[0.04] rounded-xl p-2.5 hover:bg-white/[0.04] transition-all cursor-pointer">
@@ -282,7 +353,7 @@ function LicenseModal(p2){
         sE(d.message||'Invalid key');sS2('');
       }
     }catch(ex){
-      sE('Network error — try again');sS2('');
+      sE('Network error � try again');sS2('');
     }
   }
   return <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4" onClick={oc}>
@@ -303,7 +374,7 @@ function LicenseModal(p2){
 
 function BookingCard(p){
   var b=p.booking;
-  return <div className="bg-[#0B0F19]/60 border border-white/[0.04] rounded-xl p-4 mb-3" style={{animation:'fadeIn 0.4s ease-out'}}>
+  return <div className="bg-[#0B0F19]/60 border border-white/[0.04] rounded-xl p-4 mb-3">
     <div className="flex items-center gap-3">
       <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/20 flex items-center justify-center text-sm">{SvgPhone('w-4 h-4 text-cyan-400')}</div>
       <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-slate-200 truncate">{b.prospectName||b.name||'Booking'}</p><p className="text-[10px] text-slate-500">{b.leadSource||b.source||'Scheduled'}</p></div>
@@ -348,6 +419,42 @@ function sparklinePath(data,w,h){
   }).join(' ');
 }
 
+function RepLeaderboard(){
+  var ld=useState(null);var board=ld[0];var setBoard=ld[1];
+  var ldL=useState(true);var loading=ldL[0];var setLoading=ldL[1];
+  var ldE=useState(null);var error=ldE[0];var setError=ldE[1];
+  useEffect(function(){
+    var token=localStorage.getItem('token');
+    if(!token){setLoading(false);return}
+    fetch(SSE_HOST+'/api/workspace/leaderboard',{headers:{'Authorization':'Bearer '+token}})
+      .then(function(r){return r.json()})
+      .then(function(d){setBoard(d);setLoading(false)})
+      .catch(function(e){setError(e.message);setLoading(false)});
+  },[]);
+  if(loading)return <div className="bg-[#0B0F19]/60 border border-white/[0.04] rounded-2xl p-5"><p className="text-xs text-slate-500 text-center py-4">Loading leaderboard...</p></div>;
+  if(error)return null;
+  if(!board||!board.leaderboard||board.leaderboard.length===0)return null;
+  var topRep=board.leaderboard[0];
+  return <div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/[0.04] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5 enterprise-card card-tilt card-shine enterprise-glow depth-card parallax-card mt-6">
+    <div className="flex items-center justify-between mb-5"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center">{SvgStar('w-3.5 h-3.5 text-amber-400')}</div><h2 className="text-sm font-bold text-white">Rep Leaderboard</h2></div><span className="text-[10px] text-slate-500">{board.totalLeads} total leads</span></div>
+    {topRep&&<div className="bg-gradient-to-r from-amber-500/10 to-yellow-500/5 border border-amber-500/20 rounded-xl p-4 mb-4 flex items-center gap-4">
+      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-lg font-bold text-white shadow-[0_0_20px_rgba(251,191,36,0.3)]">#1</div>
+      <div className="flex-1"><p className="text-sm font-bold text-white">{topRep.name}</p><p className="text-[10px] text-slate-400">{topRep.email}</p></div>
+      <div className="text-right"><p className="text-lg font-bold text-amber-400">{topRep.score}</p><p className="text-[9px] text-slate-500">Score</p></div>
+      <div className="text-right"><p className="text-lg font-bold text-emerald-400">{topRep.pickupRate}%</p><p className="text-[9px] text-slate-500">Pickup</p></div>
+    </div>}
+    <div className="overflow-x-auto"><table className="w-full text-left"><thead><tr className="text-[9px] text-slate-500 uppercase tracking-wider border-b border-white/[0.04]"><th className="pb-2 pr-2 font-semibold">#</th><th className="pb-2 pr-3 font-semibold">Rep</th><th className="pb-2 pr-3 font-semibold">Offered</th><th className="pb-2 pr-3 font-semibold">Accepted</th><th className="pb-2 pr-3 font-semibold">Pickup%</th><th className="pb-2 pr-3 font-semibold">Avg Resp</th><th className="pb-2 font-semibold">Score</th></tr></thead><tbody>{board.leaderboard.map(function(r,i){return <tr key={r.userId} className="border-b border-white/[0.02] text-sm text-slate-300 hover:bg-white/[0.02] transition-colors">
+      <td className="py-2.5 pr-2"><span className={'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold '+(i===0?'bg-amber-500/20 text-amber-400':i===1?'bg-slate-400/20 text-slate-300':i===2?'bg-amber-700/20 text-amber-600':'bg-white/[0.03] text-slate-600')}>{i+1}</span></td>
+      <td className="py-2.5 pr-3"><span className="text-white font-medium">{r.name}</span><br/><span className="text-[9px] text-slate-500">{r.isActive?'Active':'Inactive'}</span></td>
+      <td className="py-2.5 pr-3 text-slate-400">{r.leadsOffered}</td>
+      <td className="py-2.5 pr-3 text-emerald-400 font-medium">{r.leadsAccepted}</td>
+      <td className="py-2.5 pr-3">{r.pickupRate}%</td>
+      <td className="py-2.5 pr-3 text-slate-400">{r.avgResponseTime<1000?r.avgResponseTime+'ms':(r.avgResponseTime/1000).toFixed(1)+'s'}</td>
+      <td className="py-2.5"><span className={'text-xs font-bold px-2 py-0.5 rounded-full '+(r.score>=80?'bg-emerald-500/15 text-emerald-400':r.score>=60?'bg-amber-500/15 text-amber-400':'bg-red-500/15 text-red-400')}>{r.score}</span></td>
+    </tr>})}</tbody></table></div>
+  </div>;
+}
+
 function AdminKeysView(){
   var kS=useState([]);var keys=kS[0];var sK=kS[1];
   var lS=useState(false);var loading=lS[0];var sL=lS[1];
@@ -365,7 +472,7 @@ function AdminKeysView(){
     navigator.clipboard.writeText(k).then(function(){sCp(k);setTimeout(function(){sCp(null)},2000)}).catch(function(){});
   }
   useEffect(function(){loadKeys()},[]);
-  return <div className="p-8" style={{animation:'fadeIn 0.4s ease-out'}}>
+  return <div className="p-8">
     <div className="flex items-center justify-between mb-6">
       <div><h1 className="text-xl font-bold text-white">Workspace Access Keys</h1><p className="text-xs text-slate-400 mt-1">Generate and manage license keys for premium access</p></div>
       <button onClick={generateKey} disabled={generating} className="bg-[#F1C40F] hover:bg-[#D4AC0D] text-black font-semibold px-5 py-2.5 rounded-xl text-sm shadow-[0_0_20px_rgba(241,196,15,0.25)] disabled:opacity-50 transition-all flex items-center gap-2">
@@ -379,7 +486,7 @@ function AdminKeysView(){
         <p className="text-xs text-slate-600 mt-1">Click "Generate Access Key" to create the first one.</p>
       </div>:<table className="w-full text-left">
         <thead><tr className="text-[9px] text-slate-500 uppercase tracking-wider border-b border-white/[0.04]"><th className="pb-3 pl-6 pr-4 font-semibold">Key</th><th className="pb-3 pr-4 font-semibold">Status</th><th className="pb-3 pr-4 font-semibold">Created</th><th className="pb-3 pr-4 font-semibold">Used By</th><th className="pb-3 pr-6 font-semibold text-right">Action</th></tr></thead>
-        <tbody>{keys.map(function(item,i){return <tr key={item.key} className="border-b border-white/[0.02] text-sm text-slate-300 hover:bg-white/[0.01] transition-all" style={{animation:'fadeIn 0.3s ease-out'}}>
+        <tbody>{keys.map(function(item,i){return <tr key={item.key} className="border-b border-white/[0.02] text-sm text-slate-300 hover:bg-white/[0.01] transition-all">
           <td className="py-3.5 pl-6 pr-4 font-mono text-xs tracking-[0.15em] text-white font-semibold">{item.key}</td>
           <td className="py-3.5 pr-4"><span className={cn('text-[10px] px-2.5 py-0.5 rounded-full font-medium',item.status==='Active'?'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20':'bg-slate-500/10 text-slate-400 border border-slate-500/20')}>{item.status}</span></td>
           <td className="py-3.5 pr-4 text-xs text-slate-500">{new Date(item.createdAt).toLocaleDateString()}</td>
@@ -442,7 +549,7 @@ function PaymentCheckoutView(p){
     var clean=cardNumber.replace(/\s/g,'');
     if(!cardName.trim())return 'Cardholder name is required';
     if(clean.length<13||clean.length>19)return 'Enter a valid card number (13-19 digits)';
-    if(!luhnCheck(clean))return 'Invalid card number — check the digits';
+    if(!luhnCheck(clean))return 'Invalid card number � check the digits';
     if(cardExpiry.length<5){return 'Enter a valid expiry date (MM/YY)'}
     var expParts=cardExpiry.split('/');
     var expMonth=parseInt(expParts[0],10);
@@ -467,7 +574,7 @@ function PaymentCheckoutView(p){
       body:JSON.stringify({
         planName:plan.name,
         planPrice:plan.price,
-        email:p.user?.email||'eikanhaider1@gmail.com',
+        email:p.user?.email||'',
         cardNumber:cardNumber.replace(/\s/g,''),
         cardExpiry:cardExpiry,
         cardCvv:cardCvv,
@@ -494,7 +601,7 @@ function PaymentCheckoutView(p){
   }
 
   if(success){
-    return <div className="p-8" style={{animation:'fadeIn 0.4s ease-out'}}>
+    return <div className="p-8">
       <div className="max-w-lg mx-auto bg-[#0B0F19]/60 backdrop-blur-xl border border-emerald-500/20 rounded-2xl shadow-[0_8px_60px_rgba(0,0,0,0.6)] p-10 text-center">
         <div className="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-400/40 flex items-center justify-center mx-auto mb-6 shadow-[0_0_60px_rgba(16,185,129,0.2)]"><svg className="w-10 h-10 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
         <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full uppercase tracking-wider mb-3 inline-block">Activation Complete</span>
@@ -507,7 +614,7 @@ function PaymentCheckoutView(p){
     </div>;
   }
 
-  return <div className="p-8" style={{animation:'fadeIn 0.4s ease-out'}}>
+  return <div className="p-8">
     <div className="max-w-lg mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div><h1 className="text-xl font-bold text-white">Secure Checkout</h1><p className="text-xs text-slate-400 mt-1">Complete payment to activate the {plan.name} plan</p></div>
@@ -587,7 +694,7 @@ export default function BasicDashboard(){
   var uS=useState(null);var user=uS[0];var setUser=uS[1];
   var aS=useState('Dashboard');var activeTab=aS[0];var setActiveTab=aS[1];
   var pS=useState(null);var showPaymentAlert=pS[0];var setShowPaymentAlert=pS[1];
-  var lS=useState([]);var leads=lS[0];var setLeads=lS[1];
+  var lS=useState(function(){try{var s=localStorage.getItem('dashboardLeads');return s?JSON.parse(s):[]}catch(ex){return[]}});var leads=lS[0];var setLeads=lS[1];
   var bS=useState([]);var bookingAlerts=bS[0];var setBookingAlerts=bS[1];
   var fS=useState([]);var followUps=fS[0];var setFollowUps=fS[1];
   var mS=useState({totalActiveLeads:0,liveCallConnections:0,conversionRate:0,queueWaitTime:'\u2014',recentLeads:[],pipelineStages:[],teamMetrics:[]});var metrics=mS[0];var setMetrics=mS[1];
@@ -598,16 +705,27 @@ export default function BasicDashboard(){
   var eMS=useState(false);var isEnterpriseModalOpen=eMS[0];var setIsEnterpriseModalOpen=eMS[1];
   function initTier(){
     try{
-      return localStorage.getItem('subscriptionTier')||(user&&user.subscriptionTier)||'BASIC';
+      var licenseAct=localStorage.getItem('licenseActivated');var fromStorage=localStorage.getItem('subscriptionTier');if(licenseAct==='true'&&(!fromStorage||fromStorage==='BASIC')){fromStorage='PREMIUM';localStorage.setItem('subscriptionTier','PREMIUM')}
+      if(fromStorage&&fromStorage!=='BASIC')return fromStorage;
+      var fromUser=user&&user.subscriptionTier;
+      if(fromUser&&fromUser!=='BASIC')return fromUser;
+      if(typeof window!=='undefined'){
+        var tkn2=localStorage.getItem('token');
+        if(tkn2){
+          try{
+            var p2=JSON.parse(atob(tkn2.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+            if(p2.subscriptionTier&&p2.subscriptionTier!=='BASIC')return p2.subscriptionTier;
+          }catch(e2){}
+        }
+      }
+      return 'BASIC';
     }catch(e){return 'BASIC'}
   }
   var tS=useState(initTier);var subscriptionTier=tS[0];var setSubscriptionTier=tS[1];
   var isPremium=subscriptionTier==='PREMIUM';
-  var mLS=useState([]);var manualLeads=mLS[0];var setManualLeads=mLS[1];
-  var mNS=useState('');var manualName=mNS[0];var setManualName=mNS[1];
-  var mES=useState('');var manualEmail=mES[0];var setManualEmail=mES[1];
-  var mPS=useState('');var manualPhone=mPS[0];var setManualPhone=mPS[1];
-  var iUS=useState(false);var isUnlocking=iUS[0];var setIsUnlocking=iUS[1];
+  var mLS=useState(function(){try{var stored=localStorage.getItem('manualLeads');return stored?JSON.parse(stored):[]}catch(ex){return[]}});var manualLeads=mLS[0];var setManualLeads=mLS[1];
+  var iUS=useState(function(){try{var la=localStorage.getItem('licenseActivated')==='true';var st=localStorage.getItem('subscriptionTier');return la&&st!=='PREMIUM'}catch(ex){return false}});var isUnlocking=iUS[0];var setIsUnlocking=iUS[1];
+  var suo=useState(false);var showUnlockOverlay=suo[0];var setShowUnlockOverlay=suo[1];
   var drS=useState(null);var drawerOpen=drS[0];var setDrawerOpen=drS[1];
   var crS=useState(false);var crmConnected=crS[0];var setCrm=crS[1];
   var slS=useState(false);var slackConnected=slS[0];var setSlack=slS[1];
@@ -622,7 +740,7 @@ export default function BasicDashboard(){
   var aTF=useState(false);var showAddTrunk=aTF[0];var setShowAddTrunk=aTF[1];
   var aTD=useState({sid:'',ipAuth:'',region:'us-east'});var addTrunkData=aTD[0];var setAddTrunkData=aTD[1];
   var aRR=useState('round_robin');var activeRoutingRule=aRR[0];var setActiveRoutingRule=aRR[1];
-  /* regionDropdownOpen removed — native select used instead */
+  /* regionDropdownOpen removed � native select used instead */
   var aR=useState(12);var activeReps=aR[0];var setActiveReps=aR[1];
   var wC=useState(75);var workloadCapacity=wC[0];var setWorkloadCapacity=wC[1];
   var iB=useState(null);var ingestionBanner=iB[0];var setIngestionBanner=iB[1];
@@ -630,14 +748,25 @@ export default function BasicDashboard(){
   /* ===== AUTH CHECK ===== */
   useEffect(function(){
     var tkn=localStorage.getItem('token');
+    var activated=localStorage.getItem('licenseActivated')==='true';
+    var storedTier=localStorage.getItem('subscriptionTier');
+    if(activated&&storedTier==='PREMIUM'){
+      setSubscriptionTier('PREMIUM');
+      setIsUnlocking(false);
+    }
     if(tkn){
       try{
         var p=JSON.parse(atob(tkn.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
         setUser(p);
+        if(p.subscriptionTier&&p.subscriptionTier!=='BASIC'){
+          setSubscriptionTier(p.subscriptionTier);
+          localStorage.setItem('subscriptionTier',p.subscriptionTier);
+        }
         fetch(SSE_HOST+'/api/subscription/status?email='+encodeURIComponent(p.email||'')).then(function(r){return r.json()}).then(function(d){
           if(d.isPremium&&d.subscriptionTier){
             setSubscriptionTier(d.subscriptionTier);
             localStorage.setItem('subscriptionTier',d.subscriptionTier);
+            localStorage.setItem('licenseActivated','true');
             if(d.expiresAt)localStorage.setItem('subExpiresAt',d.expiresAt);
           }
         }).catch(function(){});
@@ -652,14 +781,13 @@ export default function BasicDashboard(){
     function connect(){
       try{
         es=new EventSource(SSE_HOST+'/api/stream');
-        es.addEventListener('NEW_LEAD_ALERT',function(e){try{var p=JSON.parse(e.data);var en={id:p.leadId||'lead-'+Date.now(),prospectName:p.prospectName||p.name||'Unknown',email:p.email||null,phone:p.phone||null,leadSource:p.leadSource||p.source||'Slack',time:new Date().toLocaleTimeString(),status:'ROUTING'};setLeads(function(prev){return[en].concat(prev).slice(0,100)})}catch(ex){}});
+        es.addEventListener('NEW_LEAD_ALERT',function(e){try{var p=JSON.parse(e.data);var en={id:p.leadId||'lead-'+Date.now(),prospectName:p.prospectName||p.name||'Unknown',email:p.email||null,phone:p.phone||null,leadSource:p.leadSource||p.source||'Slack',time:new Date().toLocaleTimeString(),status:'ROUTING'};setLeads(function(prev){var updated=[en].concat(prev).slice(0,100);try{localStorage.setItem('dashboardLeads',JSON.stringify(updated))}catch(ex){}return updated})}catch(ex){}});
         es.addEventListener('NEW_BOOKING_ALERT',function(e){try{var p=JSON.parse(e.data);setBookingAlerts(function(prev){return[p].concat(prev).slice(0,50)})}catch(ex){}});
         es.addEventListener('FOLLOW_UP_REMINDER',function(e){try{var p=JSON.parse(e.data);if(p.isValidHumanLead===true&&p.metaSource){setFollowUps(function(prev){return[p].concat(prev).slice(0,20)})}}catch(ex){}});
-        es.addEventListener('METRICS_UPDATE',function(e){try{var p=JSON.parse(e.data);setMetrics(p)}catch(ex){}});
+        es.addEventListener('METRICS_UPDATE',function(e){try{var p=JSON.parse(e.data);setMetrics(function(prev){return{...prev,...p}})}catch(ex){}});
         es.addEventListener('ACTIVE_CALL_START',function(e){try{var p=JSON.parse(e.data);if(p.leadId){setCallStates(function(prev){return{...prev,[p.leadId]:'ON_CALL'}})};setMetrics(function(prev){return{...prev,liveCallConnections:(prev.liveCallConnections||0)+1}})}catch(ex){}});
         es.addEventListener('ACTIVE_CALL_END',function(e){try{var p=JSON.parse(e.data);if(p.leadId){setCallStates(function(prev){var n2={...prev};delete n2[p.leadId];return n2})};setMetrics(function(prev){return{...prev,liveCallConnections:Math.max(0,(prev.liveCallConnections||0)-1)}})}catch(ex){}});
-        es.addEventListener('NEW_LEAD_ALERT',function(e){try{var p=JSON.parse(e.data);setIngestionBanner({name:p.prospectName||p.name||'Unknown',source:p.leadSource||p.source||'SSE',email:p.email,phone:p.phone,timestamp:new Date().toLocaleTimeString()})}catch(ex){}});
-        es.addEventListener('PLAN_UPGRADE_SUCCESS',function(e){try{var p=JSON.parse(e.data);setSubscriptionTier('PREMIUM');setUser(function(prev){if(!prev)return{tier:'PREMIUM'};return{...prev,tier:'PREMIUM'}});setShowPaymentSuccessOverlay(true);fireConfetti();setTimeout(function(){setShowPaymentSuccessOverlay(false)},4000)}catch(ex){}});
+        es.addEventListener('PLAN_UPGRADE_SUCCESS',function(e){try{var p=JSON.parse(e.data);localStorage.setItem('subscriptionTier','PREMIUM');localStorage.setItem('licenseActivated','true');setSubscriptionTier('PREMIUM');setUser(function(prev){if(!prev)return{subscriptionTier:'PREMIUM'};return{...prev,subscriptionTier:'PREMIUM'}});setShowPaymentSuccessOverlay(true);fireConfetti();setTimeout(function(){setShowPaymentSuccessOverlay(false)},4000)}catch(ex){}});
         es.onerror=function(){if(es){try{es.close()}catch(ex){}es=null}var d=Math.min(1000*Math.pow(2,attempts),30000);attempts++;retry=setTimeout(connect,d)};
       }catch(ex){var d2=Math.min(1000*Math.pow(2,attempts),30000);attempts++;retry=setTimeout(connect,d2)}
     }
@@ -677,8 +805,9 @@ export default function BasicDashboard(){
   useEffect(function(){
     var params=new URLSearchParams(window.location.search);
     if(params.get('payment')==='success'){
+      localStorage.setItem('subscriptionTier','PREMIUM');
       setSubscriptionTier('PREMIUM');
-      setUser(function(prev){if(!prev)return{tier:'PREMIUM'};return{...prev,tier:'PREMIUM'}});
+      setUser(function(prev){if(!prev)return{subscriptionTier:'PREMIUM'};return{...prev,subscriptionTier:'PREMIUM'}});
       setShowPaymentSuccessOverlay(true);
       fireConfetti();
       setTimeout(function(){setShowPaymentSuccessOverlay(false)},4000);
@@ -689,7 +818,7 @@ export default function BasicDashboard(){
     }
   },[]);
 
-  /* ===== LIVE HUMAN VALIDATION GATE — NO MOCK SEQUENCES ACCEPTED ===== */
+  /* ===== LIVE HUMAN VALIDATION GATE � NO MOCK SEQUENCES ACCEPTED ===== */
 
   /* ===== CLICK-TO-CONNECT ENGINE ===== */
   function handleConnectClick(leadId, leadName, email, phone) {
@@ -701,7 +830,7 @@ export default function BasicDashboard(){
     fetch(SSE_HOST+'/api/telephony/dial', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({leadId:leadId,leadName:leadName||'eikan haider',email:email||'eikanhaider1@gmail.com',phone:phone||null,routingRule:activeRoutingRule,trunkConfigs:trunks}),
+      body:JSON.stringify({leadId:leadId,leadName:leadName,email:email,phone:phone,routingRule:activeRoutingRule,trunkConfigs:trunks}),
     }).then(function(r){return r.json()}).then(function(data){
       if(data&&data.success){
         setCallStates(function(prev){return{...prev,[leadId]:'ON_CALL'}});
@@ -730,7 +859,7 @@ export default function BasicDashboard(){
   ];
 
   function BookingAlertsPanel(){
-    return <div style={{animation:'fadeIn 0.4s ease-out'}}>
+    return <div>
       <div className="flex items-center gap-3 mb-4">
         <span className={cn('text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer transition-all',alertTab==='leads'?'bg-violet-500/15 text-violet-300 border border-violet-500/20':'text-slate-500 hover:text-slate-300 border border-transparent')} onClick={function(){setAlertTab('leads')}}>{'\uD83D\uDCE1'} New Lead Alerts</span>
         <span className={cn('text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer transition-all',alertTab==='bookings'?'bg-cyan-500/15 text-cyan-300 border border-cyan-500/20':'text-slate-500 hover:text-slate-300 border border-transparent')} onClick={function(){setAlertTab('bookings')}}>{'\uD83D\uDCC5'} New Booking Alerts</span>
@@ -743,12 +872,12 @@ export default function BasicDashboard(){
       </div>}
       <div className="max-h-[300px] overflow-y-auto">
         {alertTab==='leads'&&<>{leads.slice(0,10).map(function(l,i){return <TimelineItem key={'lead-'+i} name={l.prospectName||l.name||'Lead'} source={l.leadSource||l.source||'SSE'} status={l.status==='ROUTING'?'Connected':l.status} time={l.time||'just now'} dot={l.status==='ROUTING'?'bg-emerald-500':l.status==='BOOKING'?'bg-cyan-500':'bg-slate-500'}/>})}{leads.length===0&&<p className="text-[11px] text-slate-600 text-center py-8">Waiting for live ingestion pipelines... Server connected.</p>}</>}
-        {alertTab==='bookings'&&<>{bookingAlerts.slice(0,10).map(function(b,i){return <BookingCard key={'bk-'+i} booking={b}/>})}{workspaceMode==='closer'&&bookingAlerts.filter(function(b){return b.salesRep}).map(function(b,i){return <div key={'closer-'+i} className="border border-violet-500/30 rounded-xl p-3 mb-2 bg-violet-500/5" style={{animation:'fadeIn 0.3s ease-out'}}><div className="flex items-center gap-2 text-[10px] text-violet-400 font-semibold mb-1">{SvgZap('w-3 h-3')} Closer Dispatch: {b.salesRep}</div><p className="text-xs text-slate-300">{b.prospectName||b.name} &middot; {b.hostEmail||'No host email'}</p></div>})}{bookingAlerts.length===0&&<p className="text-[11px] text-slate-600 text-center py-8">Waiting for live ingestion pipelines... Server connected.</p>}</>}
+        {alertTab==='bookings'&&<>{bookingAlerts.slice(0,10).map(function(b,i){return <BookingCard key={'bk-'+i} booking={b}/>})}{workspaceMode==='closer'&&bookingAlerts.filter(function(b){return b.salesRep}).map(function(b,i){return <div key={'closer-'+i} className="border border-violet-500/30 rounded-xl p-3 mb-2 bg-violet-500/5"><div className="flex items-center gap-2 text-[10px] text-violet-400 font-semibold mb-1">{SvgZap('w-3 h-3')} Closer Dispatch: {b.salesRep}</div><p className="text-xs text-slate-300">{b.prospectName||b.name} &middot; {b.hostEmail||'No host email'}</p></div>})}{bookingAlerts.length===0&&<p className="text-[11px] text-slate-600 text-center py-8">Waiting for live ingestion pipelines... Server connected.</p>}</>}
       </div>
     </div>
   }
 
-  /* ===== AUTH GATE — wait for hydration then redirect if needed ===== */
+  /* ===== AUTH GATE � wait for hydration then redirect if needed ===== */
   if(!hydrated)return null;
   if(!user&&typeof window!=='undefined'){window.location.href='/login';return null}
   if(!user)return null;
@@ -759,12 +888,12 @@ export default function BasicDashboard(){
       setActiveReps(v);
       setWorkloadCapacity(Math.min(100,Math.round((v/50)*100)));
     }
-    return <div className="p-8" style={{animation:'fadeIn 0.4s ease-out'}}>
+    return <div className="p-8">
       <div className="flex items-center justify-between mb-6"><div><h1 className="text-xl font-bold text-white">Team &amp; Agents</h1><p className="text-xs text-slate-400 mt-1">{isPremium?'Manage your sales rep workforce':'Single user workspace'}</p></div></div>
       <div className="mb-6 bg-[#060913] border border-white/[0.04] rounded-xl p-3 flex items-center gap-3">
         <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse shrink-0"/>
         <div className="flex-1 min-w-0">
-          {ingestionBanner?<p className="text-xs text-slate-300" style={{animation:'fadeIn 0.4s ease-out'}}>{'\uD83D\uDCE1'} Incoming: <strong className="text-cyan-300">{ingestionBanner.name}</strong> from <span className="text-violet-400">{ingestionBanner.source}</span> &middot; {ingestionBanner.email||'no email'} &middot; {ingestionBanner.timestamp}</p>:<p className="text-xs text-slate-500">Waiting for live ingestion pipelines... Server connected.</p>}
+          {ingestionBanner?<p className="text-xs text-slate-300">{'\uD83D\uDCE1'} Incoming: <strong className="text-cyan-300">{ingestionBanner.name}</strong> from <span className="text-violet-400">{ingestionBanner.source}</span> &middot; {ingestionBanner.email||'no email'} &middot; {ingestionBanner.timestamp}</p>:<p className="text-xs text-slate-500">Waiting for live ingestion pipelines... Server connected.</p>}
         </div>
       </div>
       {isPremium?<div><div className="grid grid-cols-4 gap-4 mb-6">{teamData.length>0?teamData.map(function(m,i){return <TeamCard key={i} member={m}/>}):<div className="col-span-4 text-center py-12 text-xs text-slate-600">Waiting for live ingestion pipelines... Server connected.</div>}</div><div className="bg-[#0B0F19]/60 border border-white/[0.04] rounded-2xl p-5"><div className="flex items-center gap-2.5 mb-4"><div className="w-7 h-7 rounded-lg bg-violet-500/20 flex items-center justify-center">{SvgUsers('w-3.5 h-3.5 text-violet-400')}</div><h2 className="text-sm font-bold text-white">Rep Slider Workload Capacity</h2></div><p className="text-xs text-slate-400 mb-4">Unlimited seats unlocked. Drag to adjust workload capacities across your team.</p><div className="flex items-center justify-between mb-3"><span className="text-[10px] font-semibold text-slate-400">{activeReps} reps active</span><span className="text-[10px] font-semibold text-slate-400">{workloadCapacity}% capacity</span></div><input type="range" min="1" max="50" value={activeReps} onChange={handleSlider} className="accent-[#00E5FF] h-2 w-full bg-slate-800 rounded-lg appearance-none cursor-pointer transition-all" style={{background:'linear-gradient(90deg, #6366f1, #06b6d4, #00E5FF)'}}/><div className="flex justify-between text-[8px] text-slate-600 mt-1"><span>1 rep</span><span>25 reps</span><span>50 reps</span></div></div></div>:<div className="max-w-md"><div className="bg-[#0B0F19]/60 border border-white/[0.04] rounded-2xl p-6 text-center"><div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-2xl font-bold text-white mx-auto mb-4">{user.firstName.charAt(0)}</div><h2 className="text-base font-bold text-white">{user.firstName}</h2><p className="text-xs text-slate-400 mt-1">Free User &middot; Solo workspace</p><div className="mt-4 flex items-center justify-center gap-2 text-[10px] text-slate-500 bg-white/[0.02] border border-white/[0.04] rounded-lg px-4 py-2"><span className="w-2 h-2 rounded-full bg-amber-500"/>Single seat &middot; Add Rep locked</div></div></div>}
@@ -792,13 +921,13 @@ export default function BasicDashboard(){
       setAddTrunkData({sid:'',ipAuth:'',region:'us-east'});
       setShowAddTrunk(false);
     }
-    return <div className="p-8" style={{animation:'fadeIn 0.4s ease-out'}}>
+    return <div className="p-8">
       <div className="flex items-center justify-between mb-6"><div><h1 className="text-xl font-bold text-white">Communications</h1><p className="text-xs text-slate-400 mt-1">Multi-channel phone trunks configuration</p></div></div>
       <div className="grid grid-cols-2 gap-6">
         <div className="bg-[#0B0F19]/60 border border-white/[0.04] rounded-2xl p-5">
           <div className="flex items-center gap-3 mb-4"><div className="w-9 h-9 rounded-lg bg-cyan-500/20 flex items-center justify-center">{SvgPhone('w-4 h-4 text-cyan-400')}</div><h2 className="text-sm font-bold text-white">Twilio Voice Trunks</h2></div>
           <div className="space-y-3">{trunks.map(function(t,i){return <div key={t.id} className="flex items-center justify-between bg-white/[0.02] border border-white/[0.04] rounded-xl px-4 py-3"><div><span className="text-xs text-slate-300">{t.type}</span>{t.sid&&<span className="text-[8px] text-slate-600 ml-2 font-mono">{t.sid}</span>}</div><span className={cn('text-[9px] px-2 py-0.5 rounded-full font-medium',t.bg)}>{t.status}</span></div>})}</div>
-          {showAddTrunk?<div className="mt-4 bg-[#060913] border border-violet-500/20 rounded-xl p-4 space-y-3" style={{animation:'fadeIn 0.3s ease-out'}}>
+          {showAddTrunk?<div className="mt-4 bg-[#060913] border border-violet-500/20 rounded-xl p-4 space-y-3">
             <div><label className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold block mb-1">Trunk SID</label><input type="text" value={addTrunkData.sid} onChange={function(ev){setAddTrunkData(function(p){return{...p,sid:ev.target.value}})}} placeholder="TWiXx..." className="w-full bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 font-mono focus:outline-none focus:border-violet-500/50"/></div>
             <div><label className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold block mb-1">IP Auth</label><input type="text" value={addTrunkData.ipAuth} onChange={function(ev){setAddTrunkData(function(p){return{...p,ipAuth:ev.target.value}})}} placeholder="0.0.0.0/0" className="w-full bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 font-mono focus:outline-none focus:border-violet-500/50"/></div>
             <div><label className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold block mb-1">Region</label><select value={addTrunkData.region} onChange={function(ev){setAddTrunkData(function(p){return{...p,region:ev.target.value}})}} className="w-full bg-[#161B26] border border-white/[0.08] text-slate-100 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-purple-500 transition-all"><option value="us-east">US East (Virginia)</option><option value="us-west">US West (Oregon)</option><option value="eu-west">EU West (Ireland)</option><option value="ap-southeast">AP Southeast (Sydney)</option></select></div>
@@ -836,7 +965,7 @@ export default function BasicDashboard(){
         setTimeout(function(){setCsvDone(false)},2500);
       },600);
     }
-    return <div className="p-8" style={{animation:'fadeIn 0.4s ease-out'}}>
+    return <div className="p-8">
       <div className="flex items-center justify-between mb-6"><div><h1 className="text-xl font-bold text-white">Analytics &amp; Reports</h1><p className="text-xs text-slate-400 mt-1">Neon vector sparklines and conversion metrics</p></div></div>
       <div className="grid grid-cols-2 gap-6">
         <div className="bg-[#0B0F19]/60 border border-white/[0.04] rounded-2xl p-5">
@@ -858,7 +987,7 @@ export default function BasicDashboard(){
           <div className="flex justify-between text-[9px] text-slate-500 mt-2"><span>12 periods</span><span>Avg: {(convRate.reduce(function(a,b){return a+b},0)/convRate.length).toFixed(1)}%</span></div>
         </div>
         {!isPremium?<div className="col-span-2 bg-[#0B0F19]/60 border border-white/[0.04] rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-4"><div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center">{SvgBar('w-3.5 h-3.5 text-amber-400')}</div><h2 className="text-sm font-bold text-white">BASIC Report — Available on Pro</h2></div>
+          <div className="flex items-center gap-2 mb-4"><div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center">{SvgBar('w-3.5 h-3.5 text-amber-400')}</div><h2 className="text-sm font-bold text-white">BASIC Report � Available on Pro</h2></div>
           <div className="flex items-center gap-4 text-xs text-slate-500 bg-white/[0.02] border border-white/[0.04] rounded-xl px-4 py-3"><span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"/><p>BASIC reports are disabled on the free tier. Upgrade to Premium to unlock CSV exports, cohort funnel analysis, and AI-powered call scoring.</p><button onClick={function(){setShowPremiumModal(true)}} className="shrink-0 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 border border-violet-500/30 px-4 py-2 rounded-lg text-[10px] font-semibold transition-all">Upgrade</button></div>
         </div>:<div className="col-span-2 grid grid-cols-2 gap-6">
           <div className="bg-[#0B0F19]/60 border border-white/[0.04] rounded-2xl p-5">
@@ -887,7 +1016,7 @@ export default function BasicDashboard(){
   }
 
   function DatabaseLogsView(){
-    return <div className="p-8" style={{animation:'fadeIn 0.4s ease-out'}}>
+    return <div className="p-8">
       <div className="flex items-center justify-between mb-6"><div><h1 className="text-xl font-bold text-white">Database Logs</h1><p className="text-xs text-slate-400 mt-1">Unformatted telemetry histories</p></div></div>
       <div className="bg-[#0B0F19]/60 border border-white/[0.04] rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-4"><div className="w-7 h-7 rounded-lg bg-slate-500/20 flex items-center justify-center">{SvgDb('w-3.5 h-3.5 text-slate-400')}</div><h2 className="text-sm font-bold text-white">Stream Logs</h2></div>
@@ -915,7 +1044,7 @@ export default function BasicDashboard(){
       var hk='https://hooks.leadarrow.com/in/wh_'+Math.random().toString(36).substring(2,10)+'_slack';
       setSlackWebhookUrl(hk);
     }
-    return <div className="p-8" style={{animation:'fadeIn 0.4s ease-out'}}>
+    return <div className="p-8">
       <div className="flex items-center justify-between mb-6"><div><h1 className="text-xl font-bold text-white">Integrations</h1><p className="text-xs text-slate-400 mt-1">Connect external services and triggers</p></div></div>
       <div className="grid grid-cols-2 gap-6">
         <div className="bg-[#0B0F19]/60 border border-white/[0.04] rounded-2xl p-6">
@@ -935,7 +1064,7 @@ export default function BasicDashboard(){
               <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/20 flex items-center justify-center">{SvgGear('w-5 h-5 text-violet-400')}</div><div><h2 className="text-base font-bold text-white">Close CRM</h2><p className="text-[10px] text-slate-500">Enter API credentials</p></div></div>
               <button onClick={function(){setDrawerOpen(null)}} className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center justify-center hover:bg-white/[0.06] transition-all">{SvgX('w-4 h-4 text-slate-400')}</button>
             </div>
-            {crmFormStatus==='success'?<div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center" style={{animation:'fadeIn 0.4s ease-out'}}>
+            {crmFormStatus==='success'?<div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center">
               <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto mb-3">{SvgCheck('w-7 h-7 text-emerald-400')}</div>
               <h3 className="text-sm font-bold text-emerald-300 mb-1">CRM Connected</h3>
               <p className="text-[10px] text-slate-500">API key with <strong className="text-emerald-400">{crmFormData.pipelineId}</strong> pipeline active</p>
@@ -956,7 +1085,7 @@ export default function BasicDashboard(){
               <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/20 flex items-center justify-center">{SvgGear('w-5 h-5 text-cyan-400')}</div><div><h2 className="text-base font-bold text-white">Slack Trigger</h2><p className="text-[10px] text-slate-500">Generate webhook URL</p></div></div>
               <button onClick={function(){setDrawerOpen(null)}} className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center justify-center hover:bg-white/[0.06] transition-all">{SvgX('w-4 h-4 text-slate-400')}</button>
             </div>
-            {slackConnected?<div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center" style={{animation:'fadeIn 0.4s ease-out'}}>
+            {slackConnected?<div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center">
               <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto mb-3">{SvgCheck('w-7 h-7 text-emerald-400')}</div>
               <h3 className="text-sm font-bold text-emerald-300 mb-1">Webhook Active</h3>
               <p className="text-[10px] text-slate-500">Slack trigger registered &mdash; receiving events</p>
@@ -976,7 +1105,7 @@ export default function BasicDashboard(){
   }
 
   function UserProfilesView(){
-    return <div className="p-8" style={{animation:'fadeIn 0.4s ease-out'}}>
+    return <div className="p-8">
       <div className="flex items-center justify-between mb-6"><div><h1 className="text-xl font-bold text-white">User Profiles</h1><p className="text-xs text-slate-400 mt-1">Account settings and preferences</p></div></div>
       <div className="max-w-lg"><div className="bg-[#0B0F19]/60 border border-white/[0.04] rounded-2xl p-6">
         <div className="flex items-center gap-4 mb-6"><div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-2xl font-bold text-white">{user.firstName.charAt(0)}</div><div><h2 className="text-lg font-bold text-white">{user.firstName}</h2><p className="text-xs text-slate-400">{isPremium?'Admin':'User'}</p></div></div>
@@ -986,7 +1115,7 @@ export default function BasicDashboard(){
   }
 
   function BillingPortal(){
-    if(isPremium) return <div className="p-8" style={{animation:'fadeIn 0.4s ease-out'}}>
+    if(isPremium) return <div className="p-8">
       <div className="max-w-lg mx-auto bg-[#0B0F19]/60 backdrop-blur-xl border border-emerald-500/20 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-8 text-center">
         <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">{SvgCheck('w-8 h-8 text-emerald-400')}</div>
         <h2 className="text-xl font-bold text-white mb-2">Active Pro Subscriber</h2>
@@ -995,14 +1124,13 @@ export default function BasicDashboard(){
         <button onClick={function(){setActiveTab('Dashboard')}} className="mt-6 bg-[#6344E3] hover:bg-[#5035C4] text-white font-semibold px-6 py-3 rounded-xl text-sm shadow-[0_4px_25px_rgba(99,68,227,0.3)] transition-all">{'\u2190'} Back to Dashboard</button>
       </div>
     </div>;
-    return <div className="p-8" style={{animation:'fadeIn 0.4s ease-out'}}>
+    return <div className="p-8">
       <div className="flex items-center justify-between mb-2"><div><h1 className="text-2xl font-bold text-white mb-1">Billing &amp; Subscriptions</h1><p className="text-sm text-slate-400">Manage your plan and payment credentials</p></div><button onClick={function(){setActiveTab('Dashboard')}} className="border border-white/[0.06] hover:bg-white/[0.03] text-slate-400 px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-all">{SvgBar('w-4 h-4')} Dashboard</button></div>
       <div className="grid grid-cols-4 gap-4 mt-8">
         {planCards.map(function(plan,i){
           var isSelected=selectedPlan&&selectedPlan.name===plan.name;
           return <div key={plan.name} onClick={function(){if(plan.name==='Enterprise'){setIsEnterpriseModalOpen(true)}else{setSelectedPlan(plan)}}}
-            className={cn('relative bg-[#0B0F19]/60 backdrop-blur-xl border rounded-xl p-6 transition-all duration-300 cursor-pointer',plan.popular?'border-violet-500/60 bg-[#0B0F19]/80 shadow-[0_0_60px_rgba(99,68,227,0.25)] ring-1 ring-violet-500/20':'border-white/[0.04] hover:border-white/[0.08]',isSelected&&'ring-2 ring-[#00E5FF] bg-[#111827] shadow-[0_0_40px_rgba(0,229,255,0.15)]')}
-            style={{animation:'fadeIn 0.5s ease-out forwards',animationDelay:(i*0.08)+'s',opacity:0}}>
+            className={cn('relative bg-[#0B0F19]/60 backdrop-blur-xl border rounded-xl p-6 transition-all duration-300 cursor-pointer',plan.popular?'border-violet-500/60 bg-[#0B0F19]/80 shadow-[0_0_60px_rgba(99,68,227,0.25)] ring-1 ring-violet-500/20':'border-white/[0.04] hover:border-white/[0.08]',isSelected&&'ring-2 ring-[#00E5FF] bg-[#111827] shadow-[0_0_40px_rgba(0,229,255,0.15)]')}>
             {plan.badge&&<div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-[9px] font-bold text-white tracking-wider shadow-lg">{plan.badge}</div>}
             <h3 className="text-lg font-bold text-white mb-1">{plan.name}</h3>
             <div className="flex items-baseline gap-0.5 mb-2"><span className="text-2xl font-black text-white">{plan.price}</span><span className="text-sm text-slate-500">{plan.period}</span></div>
@@ -1014,7 +1142,7 @@ export default function BasicDashboard(){
           </div>
         })}
       </div>
-      {selectedPlan&&<div className="sticky bottom-0 mt-6 bg-[#0A0F1C]/95 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-5 shadow-[0_-8px_40px_rgba(0,0,0,0.8)]" style={{animation:'fadeIn 0.3s ease-out'}}>
+      {selectedPlan&&<div className="sticky bottom-0 mt-6 bg-[#0A0F1C]/95 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-5 shadow-[0_-8px_40px_rgba(0,0,0,0.8)]">
         <div className="flex items-center justify-between"><div><p className="text-sm font-semibold text-white">Selected: <span className="text-cyan-400">{selectedPlan.name}</span></p><p className="text-[10px] text-slate-500">{selectedPlan.desc}</p></div>
           <div className="flex items-center gap-4"><span className="text-lg font-black text-white">{selectedPlan.price}{selectedPlan.period}</span>
             <button onClick={function(){setActiveTab('checkout')}} className="bg-[#00E5FF] hover:bg-[#00C8E0] text-black font-bold px-8 py-3 rounded-xl transition-all duration-300 shadow-[0_4px_25px_rgba(0,229,255,0.3)] text-sm">Continue with {selectedPlan.name} &mdash; {selectedPlan.price}{selectedPlan.period}</button>
@@ -1038,35 +1166,36 @@ export default function BasicDashboard(){
   var validReminders=followUps.filter(function(f){return f.isValidHumanLead===true&&f.metaSource});
   var uniqueReminders=Array.from(new Map(validReminders.map(function(item){return[item.leadName,item]})).values()).slice(0,3);
   var totalActivePending=validReminders.length;
-  return <div className="mb-6"><div className="flex items-center gap-2 mb-3"><svg className="w-4 h-4 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg><span className="text-sm font-bold text-amber-400">{'\u26A0\uFE0F'} Follow-Up Reminders — showing {uniqueReminders.length} of {totalActivePending} active pending</span></div>{uniqueReminders.map(function(f,i){return <FollowUpReminder key={'fu-'+i} message={f.message} leadName={f.leadName} time={new Date(f.timestamp).toLocaleTimeString()}/>})}</div>
+  return <div className="mb-6"><div className="flex items-center gap-2 mb-3"><svg className="w-4 h-4 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg><span className="text-sm font-bold text-amber-400">{'\u26A0\uFE0F'} Follow-Up Reminders � showing {uniqueReminders.length} of {totalActivePending} active pending</span></div>{uniqueReminders.map(function(f,i){return <FollowUpReminder key={'fu-'+i} message={f.message} leadName={f.leadName} time={new Date(f.timestamp).toLocaleTimeString()}/>})}</div>
 }()}
       <div className="grid grid-cols-5 gap-4 mb-8">
-        <div className="col-span-3 bg-[#0B0F19]/60 backdrop-blur-xl border border-white/[0.04] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5" style={{animation:'fadeIn 0.7s ease-out'}}>
+        <div className="col-span-3 enterprise-card card-shine enterprise-glow depth-card bg-[#0B0F19]/60 backdrop-blur-xl border border-white/[0.04] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5 card-tilt parallax-card">
           <div className="flex items-center justify-between mb-5"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-violet-500/20 flex items-center justify-center">{SvgBar('w-3.5 h-3.5 text-violet-400')}</div><h2 className="text-sm font-bold text-white">Active Sales Pipeline</h2></div><span className="text-[10px] text-slate-500">{isPremium?metrics.totalActiveLeads||0:manualLeads.length} total prospects</span></div>
           {pipelineData.length>0?pipelineData.map(function(p){return <PipelineBar key={p.stage||p.name} name={p.stage||p.name} pct={p.pct||p.count} color={p.color}/>}):<p className="text-[11px] text-slate-600 text-center py-8">Waiting for live ingestion pipelines... Server connected.</p>}
         </div>
-        <div className="col-span-2 bg-[#0B0F19]/60 backdrop-blur-xl border border-white/[0.04] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5" style={{animation:'fadeIn 0.8s ease-out'}}>
+        <div className="col-span-2 enterprise-card card-shine enterprise-glow depth-card bg-[#0B0F19]/60 backdrop-blur-xl border border-white/[0.04] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5 card-tilt parallax-card">
           <div className="flex items-center gap-2.5 mb-4"><div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center">{SvgTrend('w-3.5 h-3.5 text-emerald-400')}</div><h2 className="text-sm font-bold text-white">Recent Lead Activity</h2></div>
           <div className="max-h-[260px] overflow-y-auto">{isPremium?<>{leads.slice(0,5).map(function(l,i){return <TimelineItem key={i} name={l.prospectName||l.name||'Lead'} source={l.leadSource||l.source||'SSE'} status={l.status==='ROUTING'?'Connected':l.status} time={l.time||'just now'} dot={l.status==='ROUTING'?'bg-emerald-500':l.status==='BOOKING'?'bg-cyan-500':'bg-emerald-500'}/>})}{leads.length===0&&<p className="text-[11px] text-slate-600 text-center py-8">Waiting for live ingestion pipelines... Server connected.</p>}</>:<>{manualLeads.map(function(l,i){return <TimelineItem key={i} name={l.name} source={l.email} status={l.status} time={l.time} dot='bg-violet-500'/>})}{manualLeads.length===0&&<p className="text-[11px] text-slate-600 text-center py-8">Waiting for live ingestion pipelines... Server connected.</p>}</>}</div>
         </div>
       </div>
-      <div className="relative mb-8 bg-[#0B0F19]/60 backdrop-blur-xl border border-white/[0.04] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5 overflow-hidden">
-        {!isPremium&&!isUnlocking&&<div className={cn('absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 pointer-events-none transition-all duration-[600ms]','backdrop-blur-md bg-[#070D19]/60')}>
+      <div className="relative mb-8 enterprise-card bg-[#0B0F19]/60 backdrop-blur-xl border border-white/[0.04] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5 overflow-hidden card-tilt">
+        {!isPremium&&!isUnlocking&&<div className={cn('absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 pointer-events-none','backdrop-blur-md bg-[#070D19]/60')}>
           <div className="w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center"><svg className="w-6 h-6 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
           <p className="text-sm font-semibold text-slate-200">Team Efficiency Overview</p>
           <p className="text-[11px] text-slate-500 text-center max-w-xs">Upgrade to Premium to manage your team, view conversion metrics, and optimize routing.</p>
         </div>}
-        {isUnlocking&&<div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 pointer-events-none" style={{animation:'dissolve 600ms ease-out forwards'}}>
+        {showUnlockOverlay&&<div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 pointer-events-none" style={{animation:'dissolve 600ms ease-out forwards'}}>
           <div className="w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center"><svg className="w-6 h-6 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
           <p className="text-sm font-semibold text-slate-200">Unlocking Premium...</p>
         </div>}
-        <div className={cn('transition-all duration-[600ms]',(!isPremium&&!isUnlocking)?'opacity-10':'opacity-100')}>
+        <div className={cn((!isPremium&&!isUnlocking)?'opacity-10':'opacity-100')}>
           <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center">{SvgUsers('w-3.5 h-3.5 text-emerald-400')}</div><h2 className="text-sm font-bold text-white">Team Efficiency Overview</h2></div><span className="text-[10px] text-slate-500">{teamData.length>0?teamData.length+' active agents online':'No data'}</span></div>
           <div className="grid grid-cols-4 gap-4 mb-6">{teamData.length>0?teamData.map(function(m,i){return <TeamCard key={i} member={m}/>}):<div className="col-span-4 text-center py-8 text-xs text-slate-600">Waiting for live ingestion pipelines... Server connected.</div>}</div>
+          {teamData.length>0&&<div className="mt-2 text-center"><span className="inline-block text-[8px] uppercase tracking-[0.2em] text-slate-600">Enterprise-Grade Telemetry &middot; Real-Time Sync &middot; Sub-100ms Latency</span></div>}
           {isPremium&&<BookingAlertsPanel/>}
         </div>
       </div>
-      {!isPremium&&!isUnlocking&&<div className="bg-[#0B0F19]/60 backdrop-blur-xl border border-white/[0.04] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5" style={{animation:'fadeIn 0.9s ease-out'}}>
+      {!isPremium&&!isUnlocking&&<div className="enterprise-card bg-[#0B0F19]/60 backdrop-blur-xl border border-white/[0.04] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5 card-tilt">
         <div className="flex items-center gap-3 mb-4">
           <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/20">{'\uD83D\uDCE1'} New Lead Alerts</span>
           <span className="text-xs font-semibold px-3 py-1.5 rounded-lg text-slate-500 border border-transparent relative">
@@ -1076,16 +1205,17 @@ export default function BasicDashboard(){
         </div>
         <div className="max-h-[200px] overflow-y-auto">{leads.slice(0,5).map(function(l,i){return <TimelineItem key={'lead-'+i} name={l.prospectName||l.name||'Lead'} source={l.leadSource||l.source||'SSE'} status={l.status==='ROUTING'?'Connected':l.status} time={l.time||'just now'} dot={l.status==='ROUTING'?'bg-emerald-500':l.status==='BOOKING'?'bg-cyan-500':'bg-slate-500'}/>})}{leads.length===0&&<p className="text-[11px] text-slate-600 text-center py-8">Waiting for live ingestion pipelines... Server connected.</p>}</div>
       </div>}
-      {isPremium&&<div className="mt-6 bg-[#0B0F19]/60 backdrop-blur-xl border border-white/[0.04] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5" style={{animation:'fadeIn 0.9s ease-out'}}>
-        <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-lg bg-cyan-500/20 flex items-center justify-center">{SvgPhone('w-3.5 h-3.5 text-cyan-400')}</div><h2 className="text-sm font-bold text-white">Click-to-Connect Trunk Engine</h2></div><span className="text-[10px] text-slate-500">{Object.keys(callStates).length>0?Object.keys(callStates).length+' active call(s)':'No active calls'}</span></div>
+      {isPremium&&<RepLeaderboard/>}
+      {isPremium&&<div className={'enterprise-card card-shine enterprise-glow depth-card mt-6 bg-[#0B0F19]/60 backdrop-blur-xl border rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-5 card-tilt parallax-card '+(Object.keys(callStates).some(function(k){return callStates[k]==='ON_CALL'})?'border-cyan-500/30 trunk-active':'border-white/[0.04]')} style={{animation:(Object.keys(callStates).some(function(k){return callStates[k]==='ON_CALL'})?'trunkGlow 2s ease-in-out infinite':'none')}}>
+        <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-2.5"><div className={'w-7 h-7 rounded-lg flex items-center justify-center '+(Object.keys(callStates).some(function(k){return callStates[k]==='ON_CALL'})?'bg-cyan-500/30 shadow-[0_0_16px_rgba(6,182,212,0.25)]':'bg-cyan-500/20')}>{SvgPhone('w-3.5 h-3.5 text-cyan-400')}</div><h2 className="text-sm font-bold text-white">Click-to-Connect Trunk Engine</h2></div><span className={'text-[10px] '+(Object.keys(callStates).some(function(k){return callStates[k]==='ON_CALL'})?'text-cyan-400 font-semibold':'text-slate-500')}>{Object.keys(callStates).length>0?Object.keys(callStates).length+' active call(s)':'No active calls'}</span></div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead><tr className="text-[9px] text-slate-500 uppercase tracking-wider border-b border-white/[0.04]"><th className="pb-2 pr-3 font-semibold">Lead Name</th><th className="pb-2 pr-3 font-semibold">Email</th><th className="pb-2 pr-3 font-semibold">Status</th><th className="pb-2 font-semibold">Call Trunk</th></tr></thead>
-            <tbody>{leads.slice(0,10).map(function(l,i){var callState=callStates[l.id||l.leadId];return <tr key={i} className="border-b border-white/[0.02] text-sm text-slate-300" style={{animation:'fadeIn 0.3s ease-out'}}>
-              <td className="py-2.5 pr-3 font-medium text-white">{l.prospectName||l.name||'eikan haider'}</td>
-              <td className="py-2.5 pr-3 text-slate-400">{l.email||'eikanhaider1@gmail.com'}</td>
-              <td className="py-2.5 pr-3">{callState==='ON_CALL'?<span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-medium border border-amber-500/30" style={{animation:'radarPulse 1.5s ease-in-out infinite'}}>{'\uD83D\uDCA1'} ON CALL</span>:<span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">{l.status||'Connected'}</span>}</td>
-              <td className="py-2.5">{callState==='DIALING'?<button disabled className="text-[10px] px-2.5 py-1 rounded-lg font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 animate-pulse">{'\uD83D\uDCDE'} DIALING...</button>:callState==='ON_CALL'?<button onClick={function(){setCallStates(function(prev){var n2={...prev};delete n2[l.id||l.leadId];return n2});fetch(SSE_HOST+'/api/telephony/terminate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({leadId:l.id||l.leadId})}).catch(function(){})}} className="text-[10px] px-2.5 py-1 rounded-lg font-medium bg-red-500/15 text-red-300 border border-red-500/30 hover:bg-red-500/25 transition-all">{'\u274C'} Terminate</button>:<button onClick={function(){handleConnectClick(l.id||l.leadId,l.prospectName||l.name,l.email,l.phone)}} className={cn('text-[10px] px-2.5 py-1 rounded-lg font-medium transition-all',isPremium?'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/25':'bg-white/[0.03] text-slate-500 hover:text-slate-300 border border-white/[0.06]')}>{'\uD83D\uDCDE'} {isPremium?'Connect':'Upgrade'}</button>}</td>
+            <tbody>{leads.slice(0,10).map(function(l,i){var callState=callStates[l.id||l.leadId];return <tr key={i} className={'border-b text-sm text-slate-300 '+(callState==='ON_CALL'?'bg-cyan-500/[0.03] border-cyan-500/10':'border-white/[0.02]')}>
+              <td className="py-2.5 pr-3 font-medium text-white">{l.prospectName||l.name||'-'}</td>
+              <td className="py-2.5 pr-3 text-slate-400">{l.email||'-'}</td>
+              <td className="py-2.5 pr-3">{callState==='DIALING'?<span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-medium border border-amber-500/30" style={{animation:'radarPulse 0.8s ease-in-out infinite'}}>{'\u26A1'} DIALING</span>:callState==='ON_CALL'?<span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-medium border border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.2)]" style={{animation:'radarPulse 1.2s ease-in-out infinite'}}>{'\uD83D\uDCA1'} ON CALL</span>:<span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-medium">{l.status||'Connected'}</span>}</td>
+              <td className="py-2.5">{callState==='DIALING'?<button disabled className="text-[10px] px-2.5 py-1 rounded-lg font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40" style={{animation:'radarPulse 1s ease-in-out infinite'}}>{'\uD83D\uDCDE'} DIALING...</button>:callState==='ON_CALL'?<button onClick={function(){setCallStates(function(prev){var n2={...prev};delete n2[l.id||l.leadId];return n2});fetch(SSE_HOST+'/api/telephony/terminate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({leadId:l.id||l.leadId})}).catch(function(){})}} className="text-[10px] px-2.5 py-1 rounded-lg font-medium bg-red-500/15 text-red-300 border border-red-500/30 hover:bg-red-500/25 transition-all">{'\u274C'} Terminate</button>:<button onClick={function(){handleConnectClick(l.id||l.leadId,l.prospectName||l.name,l.email,l.phone)}} className={cn('text-[10px] px-2.5 py-1 rounded-lg font-medium transition-all',isPremium?'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/25':'bg-white/[0.03] text-slate-500 hover:text-slate-300 border border-white/[0.06]')}>{'\uD83D\uDCDE'} {isPremium?'Connect':'Upgrade'}</button>}</td>
             </tr>})}</tbody>
           </table>
         </div>
@@ -1097,27 +1227,27 @@ export default function BasicDashboard(){
   var layoutRoot=function(children){
     return <div className="min-h-screen bg-[#0B0F19] text-[#F3F4F6] font-sans flex antialiased selection:bg-[#00E5FF]/20">
       <BgOrbs/><style>{stylesSheet}</style>
-      <Sidebar activeTab={activeTab} setTab={setActiveTab} user={user} setUser={setUser} onLogout={function(){localStorage.removeItem('token');setUser(null);window.location.href='/login'}} setShowPaymentAlert={setShowPaymentAlert} subscriptionTier={subscriptionTier}/>
+      <Sidebar activeTab={activeTab} setTab={setActiveTab} user={user} setUser={setUser} onLogout={function(){localStorage.removeItem('token');localStorage.removeItem('subscriptionTier');localStorage.removeItem('licenseActivated');localStorage.removeItem('premiumLicenseKey');localStorage.removeItem('premiumEmail');setUser(null);window.location.href='/login'}} setShowPaymentAlert={setShowPaymentAlert} subscriptionTier={subscriptionTier}/>
       <main className="flex-1 relative z-10 overflow-y-auto">
         <div className="flex items-center justify-between px-8 py-4 border-b border-white/[0.03]">
-          <div className="flex items-center gap-3"><h1 className="text-lg font-bold text-white" style={{animation:'fadeIn 0.5s ease-out'}}>{activeTab}</h1>{isPremium&&<span className="px-2.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider shadow-[0_0_12px_rgba(16,185,129,0.2)]" style={{animation:'fadeIn 0.6s ease-out'}}>Subscriber</span>}<span className="text-[11px] text-slate-600" style={{animation:'fadeIn 0.7s ease-out'}}>Welcome back, {user.firstName}</span></div>
+          <div className="flex items-center gap-3"><h1 className="text-lg font-bold text-white">{activeTab}</h1>{isPremium&&<span className="px-2.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider shadow-[0_0_12px_rgba(16,185,129,0.2)] premium-badge" style={{animation:'pulseRing 2s ease-in-out infinite'}}>Subscriber</span>}<span className="text-[11px] text-slate-600">Welcome back, {user.firstName}</span></div>
           <div className="flex items-center gap-2.5">
             {!isPremium&&!isUnlocking&&<button onClick={function(){setIsLicenseModalOpen(true)}} className="bg-[#F1C40F]/10 border border-[#F1C40F]/20 text-[#F1C40F] px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 hover:bg-[#F1C40F]/20 transition-all">{SvgStar('w-3.5 h-3.5')} Activate License</button>}
             <button onClick={function(){setActiveTab('Billing & Plans')}} className="bg-white/[0.03] hover:bg-white/[0.06] text-slate-400 border border-white/[0.06] px-4 py-2 rounded-lg text-xs flex items-center gap-2 transition-all">{SvgCard('w-3.5 h-3.5')} Billing</button>
-            <button onClick={function(){localStorage.removeItem('token');setUser(null);setLeads([]);setBookingAlerts([]);setFollowUps([]);setMetrics({totalActiveLeads:0,liveCallConnections:0,conversionRate:0,queueWaitTime:'\u2014',recentLeads:[],pipelineStages:[],teamMetrics:[]});setManualLeads([]);setSelectedPlan(null);setActiveTab('Dashboard');setIsEnterpriseModalOpen(false);setIsLicenseModalOpen(false);setShowPaymentAlert(null);setIsUnlocking(false);setCallStates({});setSubscriptionTier('BASIC');window.location.href='/login'}} className="border border-white/[0.05] hover:bg-red-500/10 hover:text-red-400 text-slate-500 px-4 py-2 rounded-lg text-xs flex items-center gap-2 transition-all">{SvgLog('w-3.5 h-3.5')} Log out</button>
+            <button onClick={function(){localStorage.removeItem('token');localStorage.removeItem('subscriptionTier');localStorage.removeItem('licenseActivated');localStorage.removeItem('premiumLicenseKey');localStorage.removeItem('premiumEmail');setUser(null);setLeads([]);setBookingAlerts([]);setFollowUps([]);setMetrics({totalActiveLeads:0,liveCallConnections:0,conversionRate:0,queueWaitTime:'\u2014',recentLeads:[],pipelineStages:[],teamMetrics:[]});setManualLeads([]);setSelectedPlan(null);setActiveTab('Dashboard');setIsEnterpriseModalOpen(false);setIsLicenseModalOpen(false);setShowPaymentAlert(null);setIsUnlocking(false);setCallStates({});setSubscriptionTier('BASIC');window.location.href='/login'}} className="border border-white/[0.05] hover:bg-red-500/10 hover:text-red-400 text-slate-500 px-4 py-2 rounded-lg text-xs flex items-center gap-2 transition-all">{SvgLog('w-3.5 h-3.5')} Log out</button>
           </div>
         </div>
         {!isPremium&&!isUnlocking&&<div className="w-full border-b border-amber-500/15 bg-amber-500/[0.03] px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3"><span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)] animate-pulse"/><p className="text-sm font-medium text-amber-200/90">Trial Mode &mdash; Limited Features Engine active. Upgrade to unlock CRM routers.</p></div>
           <button onClick={function(){setActiveTab('Billing & Plans')}} className="bg-amber-500 hover:bg-amber-600 text-black font-semibold px-5 py-2 rounded-lg text-sm shadow-[0_0_20px_rgba(251,191,36,0.25)]">Upgrade &rarr;</button>
         </div>}
-        {isUnlocking&&<div className="w-full border-b border-emerald-500/20 bg-emerald-500/[0.03] px-8 py-4 flex items-center justify-between" style={{animation:'fadeIn 0.3s ease-out'}}>
+        {isUnlocking&&<div className="w-full border-b border-emerald-500/20 bg-emerald-500/[0.03] px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3"><span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"/><p className="text-sm font-medium text-emerald-200/90">Premium Unlocking &mdash; activating enterprise features...</p></div>
         </div>}
         {children}
       </main>
       <GateAlert data={showPaymentAlert} onClose={function(){setShowPaymentAlert(null)}} setTab={setActiveTab}/>
-      {isLicenseModalOpen&&<LicenseModal userEmail={user?.email||'eikanhaider1@gmail.com'} onClose={function(){setIsLicenseModalOpen(false)}} onActivate={function(){setUser(function(prev){if(!prev)return{tier:'PREMIUM'};return{...prev,tier:'PREMIUM'}});setSubscriptionTier('PREMIUM');return true}}/>}
+      {isLicenseModalOpen&&<LicenseModal userEmail={user?.email||''} onClose={function(){setIsLicenseModalOpen(false)}} onActivate={function(){localStorage.setItem('subscriptionTier','PREMIUM');localStorage.setItem('licenseActivated','true');setIsUnlocking(true);setShowUnlockOverlay(true);setTimeout(function(){setShowUnlockOverlay(false)},1200);setUser(function(prev){if(!prev)return{subscriptionTier:'PREMIUM'};return{...prev,subscriptionTier:'PREMIUM'}});setSubscriptionTier('PREMIUM');return true}}/>}
       {isEnterpriseModalOpen&&<EnterpriseContactModal onClose={function(){setIsEnterpriseModalOpen(false)}}/>}
       <PremiumUpgradeModal isOpen={showPremiumModal} onClose={function(){setShowPremiumModal(false)}} onUpgrade={function(){setShowPremiumModal(false);setSelectedPlan(planCards[1]);setActiveTab('checkout')}} isPaying={false}/>
       {showPaymentSuccessOverlay&&<div className="fixed inset-0 z-[99999] bg-black/70 backdrop-blur-xl flex items-center justify-center" onClick={function(){setShowPaymentSuccessOverlay(false)}}>
@@ -1144,6 +1274,7 @@ export default function BasicDashboard(){
   if(activeTab==='Communications') return layoutRoot(<CommunicationsView/>);
   if(activeTab==='Analytics & Reports') return layoutRoot(<AnalyticsView/>);
   if(activeTab==='Database Logs') return layoutRoot(<DatabaseLogsView/>);
+  if(activeTab==='Workspace') return layoutRoot(<WorkspaceView user={user} isPremium={subscriptionTier==='PREMIUM'}/>);
   if(activeTab==='Integrations') return layoutRoot(<IntegrationsView/>);
   if(activeTab==='User Profiles') return layoutRoot(<UserProfilesView/>);
   if(activeTab==='Access Keys') return layoutRoot(<AdminKeysView/>);
